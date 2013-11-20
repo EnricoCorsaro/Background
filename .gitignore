@@ -1,0 +1,42 @@
+
+build/*
+!/build/readme.txt
+results/
+source/.*swo
+source/.*swp
+include/.*swo
+include/.*swp
+
+# Compiled source 
+
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.gch
+
+# Packages
+
+*.7z
+*.dmg
+*.gz
+*.tgz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.bz2
+
+# Logs and databases
+
+*.log
+*.sql
+*.sqlite
+
+# OSX generated files
+
+.DS_Store*
+Icon?
+Thumbs.db
