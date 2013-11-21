@@ -77,27 +77,29 @@ int main(int argc, char *argv[])
 
     ArrayXd parametersMinima(Ndimensions);                      // Minima
     ArrayXd parametersMaxima(Ndimensions);                      // Maxima
+   
+    // Configuration for Castor
     
-    parametersMinima(0) = 7.0;                  // Flat noise level
-    parametersMaxima(0) = 11.0;
+    parametersMinima(0) = 1.0;                  // Flat noise level
+    parametersMaxima(0) = 5.0;
     parametersMinima(1) = 0.5;                  // Noise Amplitude 1  
     parametersMaxima(1) = 4.0;
-    parametersMinima(2) = 30.;                  // Noise Amplitude 2
-    parametersMaxima(2) = 50.;
-    parametersMinima(3) = 35.;                  // Noise Amplitude 3    
-    parametersMaxima(3) = 55.;
+    parametersMinima(2) = 90.;                  // Noise Amplitude 2
+    parametersMaxima(2) = 120.;
+    parametersMinima(3) = 70.;                  // Noise Amplitude 3    
+    parametersMaxima(3) = 100.;
     parametersMinima(4) = 0.01;                   // Noise Frequency 1
-    parametersMaxima(4) = 3.0;    
-    parametersMinima(5) = 25.;                   // Noise Frequency 2
-    parametersMaxima(5) = 45.;    
-    parametersMinima(6) = 70.;                   // Noise Frequency 3    
-    parametersMaxima(6) = 90.;    
-    parametersMinima(7) = 80.;                   // Oscillation Height
-    parametersMaxima(7) = 110.;
-    parametersMinima(8) = 120.;                  // Oscillation nuMax
-    parametersMaxima(8) = 140.;
-    parametersMinima(9) = 15.;                   // Oscillation sigma
-    parametersMaxima(9) = 30.;
+    parametersMaxima(4) = 2.0;    
+    parametersMinima(5) = 6.;                   // Noise Frequency 2
+    parametersMaxima(5) = 12.;    
+    parametersMinima(6) = 22.;                   // Noise Frequency 3    
+    parametersMaxima(6) = 35.;    
+    parametersMinima(7) = 3200.;                   // Oscillation Height
+    parametersMaxima(7) = 3800.;
+    parametersMinima(8) = 20.;                  // Oscillation nuMax
+    parametersMaxima(8) = 30.;
+    parametersMinima(9) = 2.;                   // Oscillation sigma
+    parametersMaxima(9) = 7.;
 
 
     UniformPrior uniformPrior(parametersMinima, parametersMaxima);
@@ -123,8 +125,8 @@ int main(int argc, char *argv[])
     // Start nested sampling process
     
     bool printOnTheScreen = true;                   // Print results on the screen
-    int initialNobjects = 2000;                     // Maximum (and initial) number of live points evolving within the nested sampling process. 
-    int minNobjects = 2000;                          // Minimum number of live points allowed in the computation
+    int initialNobjects = 1000;                     // Maximum (and initial) number of live points evolving within the nested sampling process. 
+    int minNobjects = 1000;                         // Minimum number of live points allowed in the computation
     int maxNdrawAttempts = 10000;                   // Maximum number of attempts when trying to draw a new sampling point
     int NinitialIterationsWithoutClustering = static_cast<int>(initialNobjects*0.5);    // The first N iterations, we assume that there is only 1 cluster
     int NiterationsWithSameClustering = static_cast<int>(initialNobjects*0.05);        // Clustering is only happening every N iterations.
