@@ -1,12 +1,12 @@
 // Derived class for global background fit to RG stars.
 // Created by Enrico Corsaro @ IvS - 19 November 2013
 // e-mail: enrico.corsaro@ster.kuleuven.be
-// Header file "GlobalFitModel.h"
-// Implementations contained in "GlobalFitModel.cpp"
+// Header file "GlobalFitRGModel.h"
+// Implementations contained in "GlobalFitRGModel.cpp"
 
 
-#ifndef GLOBALFITMODEL_H
-#define GLOBALFITMODEL_H
+#ifndef GLOBALFITRGMODEL_H
+#define GLOBALFITRGMODEL_H
 
 #include <iostream>
 #include "Model.h"
@@ -17,18 +17,19 @@ using Eigen::ArrayXd;
 typedef Eigen::Ref<Eigen::ArrayXd> RefArrayXd;
 
 
-class GlobalFitModel : public Model
+class GlobalFitRGModel : public Model
 {
     public:
     
-        GlobalFitModel(const RefArrayXd covariates);
-        ~GlobalFitModel();
+        GlobalFitRGModel(const RefArrayXd covariates);
+        ~GlobalFitRGModel();
 
         virtual void predict(RefArrayXd predictions, RefArrayXd const modelParameters);
 
 
     protected:
 
+        ArrayXd responseFunction;
 
     private:
 
