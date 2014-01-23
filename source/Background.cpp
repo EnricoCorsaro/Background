@@ -1,7 +1,7 @@
-// Main code for peak bagging by means of nested sampling analysis
-// Created by Enrico Corsaro @ IvS - 24 January 2013
+// Main code for background fitting to MS stars by means of nested sampling analysis
+// Created by Enrico Corsaro @ IvS - 21 January 2014
 // e-mail: enrico.corsaro@ster.kuleuven.be
-// Source code file "PeakBagging.cpp"
+// Source code file "Background.cpp"
 
 #include <cstdlib>
 #include <iostream>
@@ -17,17 +17,14 @@
 #include "UniformPrior.h"
 #include "NormalPrior.h"
 #include "ExponentialLikelihood.h"
-#include "GlobalFitModel.h"
+#include "GlobalFitMSModel.h"
 #include "FerozReducer.h"
+#include "PowerlawReducer.h"
 #include "Results.h"
 #include "Ellipsoid.h"
 
 int main(int argc, char *argv[])
 {
-    unsigned long Nrows;
-    int Ncols;
-    ArrayXXd data;
-  
 
     // Check number of arguments for main function
     
@@ -38,15 +35,18 @@ int main(int argc, char *argv[])
     }
 
 
-    // Read data from input file specified
+    // ---------------------------
+    // ----- Read input data -----
+    // ---------------------------
 
-    ifstream inputFile(argv[1]);
-    if (!inputFile.good())
-    {
-        cerr << "Error opening input file" << endl;
-        exit(EXIT_FAILURE);
-    }
+    unsigned long Nrows;
+    int Ncols;
+    ArrayXXd data;
+    string inputFileName(argv[1]);
+    string outputDirName(argv[2]);
 
+    ifstream inputFile;
+    File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Nrows, Ncols);
     data = File::arrayXXdFromFile(inputFile, Nrows, Ncols);
     inputFile.close();
@@ -57,20 +57,26 @@ int main(int argc, char *argv[])
     ArrayXd covariates = data.col(0);
     ArrayXd observations = data.col(1);
    
-   
-    // First step - Set up a model for the inference problem
     
-    GlobalFitModel model(covariates);
+    // --------------------------------------------------
+    // ----- Zeroth step. Set up problem dimensions -----
+    // --------------------------------------------------
+
+    int Ndimensions = 9;
+   
+
+    // -------------------------------------------------------------------
+    // ----- First step. Set up the models for the inference problem ----- 
+    // -------------------------------------------------------------------
+    
+    GlobalFitMSModel model(covariates);
 
 
-    // Second step - Setting Prior distribution
+    // -------------------------------------------------------
+    // ----- Second step. Set up all prior distributions -----
+    // -------------------------------------------------------
     
     vector<Prior*> ptrPriors(1);
-    
-
-    // Total number of free parameters (dimensions) of the problem
-
-    int Ndimensions = 10;
 
 
     // Uniform Prior
@@ -78,94 +84,96 @@ int main(int argc, char *argv[])
     ArrayXd parametersMinima(Ndimensions);                      // Minima
     ArrayXd parametersMaxima(Ndimensions);                      // Maxima
    
-    // Configuration for Castor
+   
+    // Configuration for Punto (KIC 9139163)
     
-    parametersMinima(0) = 1.0;                  // Flat noise level
-    parametersMaxima(0) = 5.0;
-    parametersMinima(1) = 0.5;                  // Noise Amplitude 1  
-    parametersMaxima(1) = 4.0;
-    parametersMinima(2) = 90.;                  // Noise Amplitude 2
-    parametersMaxima(2) = 120.;
-    parametersMinima(3) = 70.;                  // Noise Amplitude 3    
-    parametersMaxima(3) = 100.;
-    parametersMinima(4) = 0.01;                   // Noise Frequency 1
-    parametersMaxima(4) = 2.0;    
-    parametersMinima(5) = 6.;                   // Noise Frequency 2
-    parametersMaxima(5) = 12.;    
-    parametersMinima(6) = 22.;                   // Noise Frequency 3    
-    parametersMaxima(6) = 35.;    
-    parametersMinima(7) = 3200.;                   // Oscillation Height
-    parametersMaxima(7) = 3800.;
-    parametersMinima(8) = 20.;                  // Oscillation nuMax
-    parametersMaxima(8) = 30.;
-    parametersMinima(9) = 2.;                   // Oscillation sigma
-    parametersMaxima(9) = 7.;
-
+    parametersMinima(0) = 0.3;                   // Flat noise level
+    parametersMaxima(0) = 0.5;
+    parametersMinima(1) = 9.30;                  // Height power law 
+    parametersMaxima(1) = 9.36;
+    parametersMinima(2) = -2.1;                   // Exponent power law
+    parametersMaxima(2) = -1.85;
+    parametersMinima(3) = 41.;                   // Amplitude Harvey 1    
+    parametersMaxima(3) = 53.;
+    parametersMinima(4) = 280.0;                 // Timescale Harvey 1
+    parametersMaxima(4) = 312.0;    
+    parametersMinima(5) = 1.8;                  // Exponent Harvey 1
+    parametersMaxima(5) = 2.2;    
+    parametersMinima(6) = 0.3;                   // Height Oscillation    
+    parametersMaxima(6) = 0.7;    
+    parametersMinima(7) = 1650.;                 // nuMax
+    parametersMaxima(7) = 1675.;
+    parametersMinima(8) = 290.;                  // sigma
+    parametersMaxima(8) = 315.;
 
     UniformPrior uniformPrior(parametersMinima, parametersMaxima);
     ptrPriors[0] = &uniformPrior;
 
 
-    // Third step - Set up the likelihood function to be used
+    // -----------------------------------------------------------------
+    // ----- Third step. Set up the likelihood function to be used -----
+    // -----------------------------------------------------------------
     
     ExponentialLikelihood likelihood(observations, model);
     
 
-    // Fourth step - Set up the K-means clusterer using an Euclidean metric
+    // -------------------------------------------------------------------------------
+    // ----- Fourth step. Set up the K-means clusterer using an Euclidean metric -----
+    // -------------------------------------------------------------------------------
 
-    EuclideanMetric myMetric;
     int minNclusters = 1;
-    int maxNclusters = 6;
+    int maxNclusters = 4;
     int Ntrials = 10;
     double relTolerance = 0.01;
 
+    EuclideanMetric myMetric;
     KmeansClusterer kmeans(myMetric, minNclusters, maxNclusters, Ntrials, relTolerance); 
 
 
-    // Start nested sampling process
+    // ---------------------------------------------------------------------
+    // ----- Sixth step. Configure and start nested sampling inference -----
+    // ---------------------------------------------------------------------
     
     bool printOnTheScreen = true;                   // Print results on the screen
-    int initialNobjects = 1000;                     // Maximum (and initial) number of live points evolving within the nested sampling process. 
-    int minNobjects = 1000;                         // Minimum number of live points allowed in the computation
+    int initialNobjects = 800;                     // Maximum (and initial) number of live points evolving within the nested sampling process. 
+    int minNobjects = 800;                         // Minimum number of live points allowed in the computation
     int maxNdrawAttempts = 10000;                   // Maximum number of attempts when trying to draw a new sampling point
     int NinitialIterationsWithoutClustering = static_cast<int>(initialNobjects*0.5);    // The first N iterations, we assume that there is only 1 cluster
     int NiterationsWithSameClustering = static_cast<int>(initialNobjects*0.05);        // Clustering is only happening every N iterations.
-    double initialEnlargementFraction = 0.20;       // Fraction by which each axis in an ellipsoid has to be enlarged.
+    double initialEnlargementFraction = 2.50;       // Fraction by which each axis in an ellipsoid has to be enlarged.
                                                     // It can be a number >= 0, where 0 means no enlargement.
-    double shrinkingRate = 0.8;                     // Exponent for remaining prior mass in ellipsoid enlargement fraction.
+    double shrinkingRate = 0.6;                     // Exponent for remaining prior mass in ellipsoid enlargement fraction.
                                                     // It is a number between 0 and 1. The smaller the slower the shrinkage
                                                     // of the ellipsoids.
-    double terminationFactor = 0.01;                // Termination factor for nested sampling process.
+    double terminationFactor = 1.0;                // Termination factor for nested sampling process.
 
     
-    // Save configuring parameters into an ASCII file
-
-    ofstream outputFile;
-    string outputDirName(argv[2]);
-    string fullPath = outputDirName + "background_configuringParameters.txt";
-    File::openOutputFile(outputFile, fullPath);
-    File::configuringParametersToFile(outputFile, initialNobjects, minNobjects, minNclusters, maxNclusters, NinitialIterationsWithoutClustering,
-                                     NiterationsWithSameClustering, maxNdrawAttempts, initialEnlargementFraction, shrinkingRate, terminationFactor);
-    outputFile.close();
-
-
     MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, kmeans, 
                                         initialNobjects, minNobjects, initialEnlargementFraction, shrinkingRate);
-
-    double toleranceOnEvidence = 0.01;
-    FerozReducer livePointsReducer(nestedSampler, toleranceOnEvidence);
-
-    nestedSampler.run(livePointsReducer, terminationFactor, NinitialIterationsWithoutClustering, NiterationsWithSameClustering, maxNdrawAttempts);
-
-
-    // Save the results in output files
     
+    double tolerance = 1.e2;
+    double exponent = 0.4;
+    PowerlawReducer livePointsReducer(nestedSampler, tolerance, exponent, terminationFactor);
+
+    string outputPathPrefix = outputDirName + "background_";
+    nestedSampler.run(livePointsReducer, NinitialIterationsWithoutClustering, NiterationsWithSameClustering, 
+                      maxNdrawAttempts, terminationFactor, outputPathPrefix);
+
+
+    // -------------------------------------------------------
+    // ----- Last step. Save the results in output files -----
+    // -------------------------------------------------------
+   
     Results results(nestedSampler);
-    results.writeParametersToFile(outputDirName + "parameter");
-    results.writeLogLikelihoodToFile(outputDirName + "likelihoodDistribution.txt");
-    results.writeEvidenceInformationToFile(outputDirName + "evidenceInformation.txt");
-    results.writePosteriorProbabilityToFile(outputDirName + "posteriorDistribution.txt");
-    results.writeParametersSummaryToFile(outputDirName + "parameterSummary.txt");
+    results.writeParametersToFile("parameter");
+    results.writeLogLikelihoodToFile("logLikelihood.txt");
+    results.writeEvidenceInformationToFile("evidenceInformation.txt");
+    results.writePosteriorProbabilityToFile("posteriorDistribution.txt");
+
+    double credibleLevel = 68.3;
+    bool writeMarginalDistributionToFile = true;
+    results.writeParametersSummaryToFile("parameterSummary.txt", credibleLevel, writeMarginalDistributionToFile);
+
 
     return EXIT_SUCCESS;
 }
