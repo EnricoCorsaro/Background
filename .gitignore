@@ -8,6 +8,7 @@ source/.*swo
 source/.*swp
 include/.*swo
 include/.*swp
+test/*
 
 # Compiled source 
 
