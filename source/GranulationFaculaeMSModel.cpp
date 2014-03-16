@@ -1,7 +1,7 @@
-#include "GlobalFitMSModel.h"
+#include "GranulationFaculaeMSModel.h"
 
 
-// GlobalFitMSModel::GlobalFitMSModel()
+// GranulationFaculaeMSModel::GranulationFaculaeMSModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -11,7 +11,7 @@
 //                              of the independent variable.
 //
 
-GlobalFitMSModel::GlobalFitMSModel(const RefArrayXd covariates)
+GranulationFaculaeMSModel::GranulationFaculaeMSModel(const RefArrayXd covariates)
 : Model(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler SC data
@@ -30,13 +30,13 @@ GlobalFitMSModel::GlobalFitMSModel(const RefArrayXd covariates)
 
 
 
-// GlobalFitMSModel::GlobalFitMSModel()
+// GranulationFaculaeMSModel::GranulationFaculaeMSModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-GlobalFitMSModel::~GlobalFitMSModel()
+GranulationFaculaeMSModel::~GranulationFaculaeMSModel()
 {
 
 }
@@ -50,7 +50,7 @@ GlobalFitMSModel::~GlobalFitMSModel()
 
 
 
-// GlobalFitMSModel::predict()
+// GranulationFaculaeMSModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a GlobalFit model for main-sequence stars.
@@ -80,7 +80,7 @@ GlobalFitMSModel::~GlobalFitMSModel()
 //      (8) sigma (muHz)
 //
 
-void GlobalFitMSModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void GranulationFaculaeMSModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     Nparameters = modelParameters.size();
 
@@ -93,20 +93,25 @@ void GlobalFitMSModel::predict(RefArrayXd predictions, RefArrayXd const modelPar
     double amplitudeHarvey1 = modelParameters(3);
     double timescaleHarvey1 = modelParameters(4);
     double exponentHarvey1 = modelParameters(5);
-    double heightOscillation = modelParameters(6);
-    double nuMax = modelParameters(7);
-    double sigma = modelParameters(8);
+    double amplitudeHarvey2 = modelParameters(6);
+    double timescaleHarvey2 = modelParameters(7);
+    double exponentHarvey2 = modelParameters(8);
+    double heightOscillation = modelParameters(9);
+    double nuMax = modelParameters(10);
+    double sigma = modelParameters(11);
 
 
     // Compute decaying power law component
     
-    predictions = exp(heightPowerLaw) * covariates.pow(exponentPowerLaw);
+    predictions = exp(heightPowerLaw) * pow(covariates, exponentPowerLaw);
 
 
     // Compute Harvey-like components and add them to the predictions
 
     predictions += 4*amplitudeHarvey1*amplitudeHarvey1 * (timescaleHarvey1/1.e6) / 
-                   (1.0 + (2*Functions::PI*covariates*timescaleHarvey1/1.e6).pow(exponentHarvey1));
+                   (1.0 + pow(2*Functions::PI*covariates*timescaleHarvey1/1.e6, exponentHarvey1));
+    predictions += 4*amplitudeHarvey2*amplitudeHarvey2 * (timescaleHarvey2/1.e6) / 
+                   (1.0 + pow(2*Functions::PI*covariates*timescaleHarvey2/1.e6, exponentHarvey2));
 
 
     // Compute Gaussian envelope for MS Oscillations and add it to the predictions

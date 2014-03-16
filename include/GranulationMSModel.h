@@ -1,12 +1,12 @@
 // Derived class for global background fit to MS stars.
 // Created by Enrico Corsaro @ IvS - 18 January 2014
 // e-mail: enrico.corsaro@ster.kuleuven.be
-// Header file "GlobalFitMSModel.h"
-// Implementations contained in "GlobalFitMSModel.cpp"
+// Header file "GranulationMSModel.h"
+// Implementations contained in "GranulationMSModel.cpp"
 
 
-#ifndef GLOBALFITMSMODEL_H
-#define GLOBALFITMSMODEL_H
+#ifndef GRANULATIONMSMODEL_H
+#define GRANULATIONMSMODEL_H
 
 #include <iostream>
 #include "Model.h"
@@ -17,12 +17,12 @@ using Eigen::ArrayXd;
 typedef Eigen::Ref<Eigen::ArrayXd> RefArrayXd;
 
 
-class GlobalFitMSModel : public Model
+class GranulationMSModel : public Model
 {
     public:
     
-        GlobalFitMSModel(const RefArrayXd covariates);
-        ~GlobalFitMSModel();
+        GranulationMSModel(const RefArrayXd covariates);
+        ~GranulationMSModel();
 
         virtual void predict(RefArrayXd predictions, RefArrayXd const modelParameters);
 
