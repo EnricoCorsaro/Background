@@ -6,6 +6,8 @@ source/RG/*
 source/MS/*
 source/.*swo
 source/.*swp
+source/Punto/*
+source/Pollux/*
 include/.*swo
 include/.*swp
 test/*
