@@ -26,19 +26,19 @@ cmake_minimum_required(VERSION 2.8)
 
 set(Background_Dir ${CMAKE_SOURCE_DIR})
 
-# Specify the location of the MultiNest directory
+# Specify the location of the Diamonds directory
 
 get_filename_component(Parent_Dir ${Background_Dir}/ PATH)
-set(MultiNest_Dir ${Parent_Dir}/MultiNest)
+set(Diamonds_Dir ${Parent_Dir}/Diamonds)
 
 # Specify the location of the header files
 
 include_directories(${Background_Dir}/include)
-include_directories(${MultiNest_Dir}/include)
+include_directories(${Diamonds_Dir}/include)
 
 # Specify the location of the multinest library
 
-LINK_DIRECTORIES(${MultiNest_Dir}/build)
+LINK_DIRECTORIES(${Diamonds_Dir}/build)
 
 # Specify the source files to be compiled
               
@@ -64,7 +64,7 @@ endif()
 
 add_executable(background ${sourceFiles})
 
-# Link the executable with the MultiNest library
+# Link the executable with the Diamonds library
 
-target_link_libraries(background multinest) 
+target_link_libraries(background diamonds) 
 
