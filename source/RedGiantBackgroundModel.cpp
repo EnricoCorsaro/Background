@@ -1,7 +1,7 @@
-#include "GlobalFitRGModel.h"
+#include "RedGiantBackgroundModel.h"
 
 
-// GlobalFitRGModel::GlobalFitRGModel()
+// RedGiantBackgroundModel::RedGiantBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -11,8 +11,8 @@
 //                              of the independent variable.
 //
 
-GlobalFitRGModel::GlobalFitRGModel(const RefArrayXd covariates)
-: Model(covariates)
+RedGiantBackgroundModel::RedGiantBackgroundModel(const RefArrayXd covariates)
+: BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler LC data
 
@@ -30,13 +30,13 @@ GlobalFitRGModel::GlobalFitRGModel(const RefArrayXd covariates)
 
 
 
-// GlobalFitRGModel::GlobalFitRGModel()
+// RedGiantBackgroundModel::RedGiantBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-GlobalFitRGModel::~GlobalFitRGModel()
+RedGiantBackgroundModel::~RedGiantBackgroundModel()
 {
 
 }
@@ -50,7 +50,7 @@ GlobalFitRGModel::~GlobalFitRGModel()
 
 
 
-// GlobalFitRGModel::predict()
+// RedGiantBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a GlobalFit model for red giant stars.
@@ -76,7 +76,7 @@ GlobalFitRGModel::~GlobalFitRGModel()
 //      (6) sigma (muHz)
 //
 
-void GlobalFitRGModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void RedGiantBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     Nparameters = modelParameters.size();
 
@@ -85,10 +85,10 @@ void GlobalFitRGModel::predict(RefArrayXd predictions, RefArrayXd const modelPar
 
     double flatNoiseLevel = modelParameters(0);
     double amplitudeHarvey1 = modelParameters(1);
-    double amplitudeHarvey2 = modelParameters(2);
-    double amplitudeHarvey3 = modelParameters(3);
-    double frequencyHarvey1 = modelParameters(4);
-    double frequencyHarvey2 = modelParameters(5);
+    double frequencyHarvey1 = modelParameters(2);
+    double amplitudeHarvey2 = modelParameters(3);
+    double frequencyHarvey2 = modelParameters(4);
+    double amplitudeHarvey3 = modelParameters(5);
     double frequencyHarvey3 = modelParameters(6);
     double heightOscillation = modelParameters(7);
     double nuMax = modelParameters(8);
@@ -97,9 +97,10 @@ void GlobalFitRGModel::predict(RefArrayXd predictions, RefArrayXd const modelPar
 
     // Compute Harvey components and add them to the predictions
 
-    predictions = 2*Functions::PI*amplitudeHarvey1*amplitudeHarvey1/(frequencyHarvey1*(1.0 + (covariates/frequencyHarvey1).pow(4)));
-    predictions += 2*Functions::PI*amplitudeHarvey2*amplitudeHarvey2/(frequencyHarvey2*(1.0 + (covariates/frequencyHarvey2).pow(4)));
-    predictions += 2*Functions::PI*amplitudeHarvey3*amplitudeHarvey3/(frequencyHarvey3*(1.0 + (covariates/frequencyHarvey3).pow(4)));
+    double zeta = 2.0*sqrt(2.0)/Functions::PI;
+    predictions = zeta*amplitudeHarvey1*amplitudeHarvey1/(frequencyHarvey1*(1.0 + (covariates/frequencyHarvey1).pow(4)));
+    predictions += zeta*amplitudeHarvey2*amplitudeHarvey2/(frequencyHarvey2*(1.0 + (covariates/frequencyHarvey2).pow(4)));
+    predictions += zeta*amplitudeHarvey3*amplitudeHarvey3/(frequencyHarvey3*(1.0 + (covariates/frequencyHarvey3).pow(4)));
 
 
     // Compute Gaussian envelope for RGB Oscillations and add it to the predictions

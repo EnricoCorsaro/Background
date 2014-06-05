@@ -1,7 +1,7 @@
-#include "GranulationFaculaeMSModel.h"
+#include "FaculaeBackgroundModel.h"
 
 
-// GranulationFaculaeMSModel::GranulationFaculaeMSModel()
+// FaculaeBackgroundModel::FaculaeBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -11,8 +11,8 @@
 //                              of the independent variable.
 //
 
-GranulationFaculaeMSModel::GranulationFaculaeMSModel(const RefArrayXd covariates)
-: Model(covariates)
+FaculaeBackgroundModel::FaculaeBackgroundModel(const RefArrayXd covariates)
+: BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler SC data
 
@@ -30,13 +30,13 @@ GranulationFaculaeMSModel::GranulationFaculaeMSModel(const RefArrayXd covariates
 
 
 
-// GranulationFaculaeMSModel::GranulationFaculaeMSModel()
+// FaculaeBackgroundModel::FaculaeBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-GranulationFaculaeMSModel::~GranulationFaculaeMSModel()
+FaculaeBackgroundModel::~FaculaeBackgroundModel()
 {
 
 }
@@ -50,7 +50,7 @@ GranulationFaculaeMSModel::~GranulationFaculaeMSModel()
 
 
 
-// GranulationFaculaeMSModel::predict()
+// FaculaeBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a GlobalFit model for main-sequence stars.
@@ -80,7 +80,7 @@ GranulationFaculaeMSModel::~GranulationFaculaeMSModel()
 //      (8) sigma (muHz)
 //
 
-void GranulationFaculaeMSModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void FaculaeBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     Nparameters = modelParameters.size();
 

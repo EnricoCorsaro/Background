@@ -1,7 +1,7 @@
-#include "GranulationMSModel.h"
+#include "GranulationBackgroundModel.h"
 
 
-// GranulationMSModel::GranulationMSModel()
+// GranulationBackgroundModel::GranulationBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -11,8 +11,8 @@
 //                              of the independent variable.
 //
 
-GranulationMSModel::GranulationMSModel(const RefArrayXd covariates)
-: Model(covariates)
+GranulationBackgroundModel::GranulationBackgroundModel(const RefArrayXd covariates)
+: BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler SC data
 
@@ -30,13 +30,13 @@ GranulationMSModel::GranulationMSModel(const RefArrayXd covariates)
 
 
 
-// GranulationMSModel::GranulationMSModel()
+// GranulationBackgroundModel::GranulationBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-GranulationMSModel::~GranulationMSModel()
+GranulationBackgroundModel::~GranulationBackgroundModel()
 {
 
 }
@@ -50,7 +50,7 @@ GranulationMSModel::~GranulationMSModel()
 
 
 
-// GranulationMSModel::predict()
+// GranulationBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a GlobalFit model for main-sequence stars.
@@ -80,7 +80,7 @@ GranulationMSModel::~GranulationMSModel()
 //      (8) sigma (muHz)
 //
 
-void GranulationMSModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void GranulationBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     Nparameters = modelParameters.size();
 

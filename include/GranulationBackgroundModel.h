@@ -1,15 +1,15 @@
 // Derived class for global background fit to MS stars.
 // Created by Enrico Corsaro @ IvS - 18 January 2014
 // e-mail: enrico.corsaro@ster.kuleuven.be
-// Header file "GranulationFaculaeMSModel.h"
-// Implementations contained in "GranulationFaculaeMSModel.cpp"
+// Header file "GranulationBackgroundModel.h"
+// Implementations contained in "GranulationBackgroundModel.cpp"
 
 
-#ifndef GRANULATIONFACULAEMSMODEL_H
-#define GRANULATIONFACULAEMSMODEL_H
+#ifndef GRANULATIONBACKGROUNDMODEL_H
+#define GRANULATIONBACKGROUNDMODEL_H
 
 #include <iostream>
-#include "Model.h"
+#include "BackgroundModel.h"
 #include "Functions.h"
 
 using namespace std;
@@ -17,19 +17,17 @@ using Eigen::ArrayXd;
 typedef Eigen::Ref<Eigen::ArrayXd> RefArrayXd;
 
 
-class GranulationFaculaeMSModel : public Model
+class GranulationBackgroundModel : public BackgroundModel
 {
     public:
     
-        GranulationFaculaeMSModel(const RefArrayXd covariates);
-        ~GranulationFaculaeMSModel();
+        GranulationBackgroundModel(const RefArrayXd covariates);
+        ~GranulationBackgroundModel();
 
         virtual void predict(RefArrayXd predictions, RefArrayXd const modelParameters);
 
 
     protected:
-
-        ArrayXd responseFunction;
 
 
     private:
