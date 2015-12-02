@@ -78,9 +78,6 @@ RedGiantBackgroundModel::~RedGiantBackgroundModel()
 
 void RedGiantBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
-    Nparameters = modelParameters.size();
-
-
     // Initialize global parameters
 
     double flatNoiseLevel = modelParameters(0);
