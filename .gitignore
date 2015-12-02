@@ -2,6 +2,7 @@
 build/
 !/build/readme.txt
 results/
+data/
 source/RG/*
 source/MS/*
 source/.*swo
