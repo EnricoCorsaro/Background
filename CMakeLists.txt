@@ -1,4 +1,4 @@
-# cmake file to build Background
+# cmake file to build Background extension of Diamonds
 # 
 # Usage: ($ mkdir build)
 #        $ cd build
@@ -36,7 +36,7 @@ set(Diamonds_Dir ${Parent_Dir}/Diamonds)
 include_directories(${Background_Dir}/include)
 include_directories(${Diamonds_Dir}/include)
 
-# Specify the location of the multinest library
+# Specify the location of the Diamonds library
 
 LINK_DIRECTORIES(${Diamonds_Dir}/build)
 
