@@ -1,6 +1,6 @@
-// Derived class for global background fit to MS stars.
+// Derived class for global background fit to RG stars.
 // Created by Enrico Corsaro @ IvS - 18 January 2014
-// e-mail: enrico.corsaro@ster.kuleuven.be
+// e-mail: emncorsaro@gmail.com
 // Header file "RedGiantBackgroundModel.h"
 // Implementations contained in "RedGiantBackgroundModel.cpp"
 
