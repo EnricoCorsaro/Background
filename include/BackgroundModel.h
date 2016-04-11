@@ -1,6 +1,6 @@
 // Derived class for global background fit to RG stars.
 // Created by Enrico Corsaro @ IvS - 19 November 2013
-// e-mail: enrico.corsaro@ster.kuleuven.be
+// e-mail: emncorsaro@gmail.com
 // Header file "BackgroundModel.h"
 // Implementations contained in "BackgroundModel.cpp"
 
@@ -11,6 +11,7 @@
 #include <iostream>
 #include "Model.h"
 #include "Functions.h"
+#include "File.h"
 
 using namespace std;
 using Eigen::ArrayXd;
@@ -25,12 +26,15 @@ class BackgroundModel : public Model
         ~BackgroundModel();
         
         ArrayXd getResponseFunction();
+        double getNyquistFrequency();
 
+        void readNyquistFrequencyFromFile(const string inputFileName);
         virtual void predict(RefArrayXd predictions, RefArrayXd const modelParameters) = 0;
 
 
     protected:
 
+        double NyquistFrequency;
         ArrayXd responseFunction;
 
     private:

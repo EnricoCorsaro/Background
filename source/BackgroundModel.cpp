@@ -9,8 +9,6 @@
 // INPUT:
 //      covariates:             one-dimensional array containing the values
 //                              of the independent variable.
-//      NparametersPerType:     configuring numbers for the Peak Bagging model
-//      nuMax:                  the frequency of maximum power excess
 //
 
 BackgroundModel::BackgroundModel(const RefArrayXd covariates)
@@ -60,4 +58,65 @@ BackgroundModel::~BackgroundModel()
 ArrayXd BackgroundModel::getResponseFunction()
 {
     return responseFunction;
+}
+
+
+
+
+
+
+
+
+// BackgroundModel::NyquistFrequency()
+//
+// PURPOSE:
+//      Gets the protected data member NyquistFrequency.
+//
+// OUTPUT:
+//      A double containing the Nyquist frequency for the given cadence adopted.
+//
+
+double BackgroundModel::getNyquistFrequency()
+{
+    return NyquistFrequency;
+}
+
+
+
+
+
+
+
+
+
+
+
+// BackgroundModel::readNyquistFrequencyFromFile()
+//
+// PURPOSE:
+//      Reads the Nyquist frequency of the dataset from an input ASCII file.
+//
+// INPUT:
+//      inputFileName:      a string specifying the full path (filename included) of the input file to read.
+//
+// OUTPUT:
+//      void
+//
+
+void BackgroundModel::readNyquistFrequencyFromFile(const string inputFileName)
+{
+    ifstream inputFile;
+    File::openInputFile(inputFile, inputFileName);
+
+    unsigned long Nrows;
+    int Ncols;
+
+    File::sniffFile(inputFile, Nrows, Ncols);
+    ArrayXd inputData;
+    inputData.resize(Nrows);
+
+    inputData = File::arrayXXdFromFile(inputFile, Nrows, Ncols);
+    NyquistFrequency = inputData(0);
+
+    inputFile.close();
 }
