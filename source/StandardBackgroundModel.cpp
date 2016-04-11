@@ -1,24 +1,30 @@
-#include "MainSequenceBackgroundModel.h"
+#include "StandardBackgroundModel.h"
 
 
-// MainSequenceBackgroundModel::MainSequenceBackgroundModel()
+// StandardBackgroundModel::StandardBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
 //
 // INPUT:
 //      covariates:             one-dimensional array containing the values
-//                              of the independent variable.
+//                              of the independent variable
+//      inputNyquestFrequencyFileName:      the string containing the file name of the input ASCII file with the
+//                                          value of the Nyquist frequency to be adopted in the response function.
 //
 
-MainSequenceBackgroundModel::MainSequenceBackgroundModel(const RefArrayXd covariates)
+StandardBackgroundModel::StandardBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
 : BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler LC data
 
-    double NyquistFrequency = 8496.355743094671;    // muHz
+    // NyquistFrequency = 8496.355743094671     muHz     // Kepler SC
+    // NyquistFrequency = 283.2116656017908     muHz     // Kepler LC
+
+    readNyquistFrequencyFromFile(inputNyquistFrequencyFileName);
+
     ArrayXd sincFunctionArgument = (Functions::PI / 2.0) * covariates / NyquistFrequency;
-    responseFunction = (sincFunctionArgument.sin() / sincFunctionArgument).square(); 
+    responseFunction = (sincFunctionArgument.sin() / sincFunctionArgument).square();
 }
 
 
@@ -30,13 +36,13 @@ MainSequenceBackgroundModel::MainSequenceBackgroundModel(const RefArrayXd covari
 
 
 
-// MainSequenceBackgroundModel::MainSequenceBackgroundModel()
+// StandardBackgroundModel::StandardBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-MainSequenceBackgroundModel::~MainSequenceBackgroundModel()
+StandardBackgroundModel::~StandardBackgroundModel()
 {
 
 }
@@ -50,7 +56,7 @@ MainSequenceBackgroundModel::~MainSequenceBackgroundModel()
 
 
 
-// MainSequenceBackgroundModel::predict()
+// StandardBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a GlobalFit model for red giant stars.
@@ -76,7 +82,7 @@ MainSequenceBackgroundModel::~MainSequenceBackgroundModel()
 //      (6) sigma (muHz)
 //
 
-void MainSequenceBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void StandardBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     // Initialize global parameters
 
@@ -114,14 +120,4 @@ void MainSequenceBackgroundModel::predict(RefArrayXd predictions, RefArrayXd con
 
     predictions += flatNoiseLevel;
 }
-
-
-
-
-
-
-
-
-
-
 

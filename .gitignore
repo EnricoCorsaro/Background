@@ -5,12 +5,14 @@ results/
 data/
 source/RG/*
 source/MS/*
+source/Other/*
 source/.*swo
 source/.*swp
 source/Punto/*
 source/Pollux/*
 include/.*swo
 include/.*swp
+include/Other/*
 test/*
 
 # Compiled source 
