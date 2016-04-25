@@ -1,5 +1,6 @@
 // Main code for background fitting to red giant stars by means of nested sampling analysis
 // Created by Enrico Corsaro @ IvS - July 2014
+// Last update: April 2016 @ CEA
 // e-mail: emncorsaro@gmail.com
 // Source code file "Background.cpp"
 
@@ -45,20 +46,32 @@ int main(int argc, char *argv[])
     ArrayXXd data;
     string KICID(argv[1]);
     string runNumber(argv[2]);
-    string baseInputDirName = "/Users/eco/asismology/github/Background/data/";
+
+
+    // Read the local path for the working session from an input ASCII file
+    ifstream inputFile;
+    File::openInputFile(inputFile, "localPath.txt");
+    File::sniffFile(inputFile, Nrows, Ncols);
+    vector<string> myLocalPath;
+    myLocalPath = File::vectorStringFromFile(inputFile, Nrows);
+    inputFile.close();
+
+    
+    // Set up some string paths used in the computation
+    string baseInputDirName = myLocalPath[0] + "data/";
     string inputFileName = baseInputDirName + "KIC" + KICID + ".txt";
-    string outputDirName = "/Users/eco/asismology/github/Background/results/KIC" + KICID + "/";
+    string outputDirName = myLocalPath[0] + "results/KIC" + KICID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
 
-    ifstream inputFile;
+
+    // Read the input dataset
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Nrows, Ncols);
     data = File::arrayXXdFromFile(inputFile, Nrows, Ncols);
     inputFile.close();
 
    
-    // Creating arrays for each data type
-    
+    // Create arrays for each data type
     ArrayXd covariates = data.col(0);
     ArrayXd observations = data.col(1); 
    
@@ -70,7 +83,7 @@ int main(int argc, char *argv[])
     // Uniform Prior
     unsigned long Ndimensions;              // Number of parameters for which prior distributions are defined
     
-    // ---- Read prior hyper parameters for resolved modes -----
+    // Read prior hyper parameters for resolved modes
     inputFileName = outputDirName + "background_hyperParameters.txt";
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Ndimensions, Ncols);
@@ -109,8 +122,8 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------
     
     inputFileName = outputDirName + "NyquistFrequency.txt";
-    //FullBackgroundModel model(covariates, inputFileName);      // Colored-noise component
-    StandardBackgroundModel model(covariates, inputFileName);       // No colored-noise component
+    FullBackgroundModel model(covariates, inputFileName);      // Colored-noise component
+    // StandardBackgroundModel model(covariates, inputFileName);       // No colored-noise component
 
 
 
@@ -214,6 +227,9 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << maxNclusters << endl;
     nestedSampler.outputFile << initialEnlargementFraction << endl;
     nestedSampler.outputFile << shrinkingRate << endl;
+    nestedSampler.outputFile << "# Local working path used: " + myLocalPath[0] << endl;
+    nestedSampler.outputFile << "# KIC ID: " + KICID << endl;
+    nestedSampler.outputFile << "# Run Number: " + runNumber << endl;
     nestedSampler.outputFile.close();
 
 
