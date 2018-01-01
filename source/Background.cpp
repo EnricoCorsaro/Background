@@ -20,6 +20,9 @@
 #include "NormalPrior.h"
 #include "ExponentialLikelihood.h"
 #include "StandardBackgroundModel.h"
+#include "SimpleBackgroundModel.h"
+#include "NoGaussianBackgroundModel.h"
+#include "StandardSlopeBackgroundModel.h"
 #include "FullBackgroundModel.h"
 #include "FerozReducer.h"
 #include "PowerlawReducer.h"
@@ -63,6 +66,11 @@ int main(int argc, char *argv[])
     string outputDirName = myLocalPath[0] + "results/KIC" + KICID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
 
+    cerr << "-------------------------- " << endl;
+    cerr << " Analyzing KIC" + KICID << endl;
+    cerr << "-------------------------- " << endl;
+    cerr << endl;
+
 
     // Read the input dataset
     File::openInputFile(inputFile, inputFileName);
@@ -88,11 +96,13 @@ int main(int argc, char *argv[])
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Ndimensions, Ncols);
     
+    /*
     if ((Ndimensions != 12.0) && (Ndimensions != 10.0))            // Colored-noise component included or excluded
     {
         cerr << "Wrong number of input prior hyper-parameters for background model." << endl;
         exit(EXIT_FAILURE);
     }
+    */
     
     if (Ncols != 2)
     {
@@ -122,9 +132,11 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------
     
     inputFileName = outputDirName + "NyquistFrequency.txt";
-    FullBackgroundModel model(covariates, inputFileName);      // Colored-noise component
-    // StandardBackgroundModel model(covariates, inputFileName);       // No colored-noise component
-
+    StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
+    // NoGaussianBackgroundModel model(covariates, inputFileName);      // No colored-noise and no Gaussian component
+    // StandardSlopeBackgroundModel model(covariates, inputFileName);   // No colored-noise component but varying slope for 1 component
+    // FullBackgroundModel model(covariates, inputFileName);            // Colored-noise component
+    // SimpleBackgroundModel model(covariates, inputFileName);          // No colored-noise component
 
 
     // -----------------------------------------------------------------
@@ -187,23 +199,24 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    bool printOnTheScreen = true;                       // Print results on the screen
-    int initialNlivePoints = configuringParameters(0);     // Initial number of live points 
-    int minNlivePoints = configuringParameters(1);         // Minimum number of live points 
-    int maxNdrawAttempts = configuringParameters(2);    // Maximum number of attempts when trying to draw a new sampling point
+    bool printOnTheScreen = true;                        // Print results on the screen
+    int initialNlivePoints = configuringParameters(0);   // Initial number of live points 
+    int minNlivePoints = configuringParameters(1);       // Minimum number of live points 
+    int maxNdrawAttempts = configuringParameters(2);     // Maximum number of attempts when trying to draw a new sampling point
     int NinitialIterationsWithoutClustering = configuringParameters(3); // The first N iterations, we assume that there is only 1 cluster
     int NiterationsWithSameClustering = configuringParameters(4);       // Clustering is only happening every N iterations.
-    double initialEnlargementFraction = 0.267*pow(Ndimensions,0.643);   //configuringParameters(5);   // Fraction by which each axis in an ellipsoid has to be enlarged.
-                                                                    // It can be a number >= 0, where 0 means no enlargement.
+    double initialEnlargementFraction = 0.369*pow(Ndimensions,0.574); // requires Nlive = 500; configuringParameters(5);   
+                                                                      //  Fraction by which each axis in an ellipsoid has to be enlarged.
+                                                                      // It can be a number >= 0, where 0 means no enlargement.
     double shrinkingRate = configuringParameters(6);        // Exponent for remaining prior mass in ellipsoid enlargement fraction.
                                                             // It is a number between 0 and 1. The smaller the slower the shrinkage
                                                             // of the ellipsoids.
                                                             
-    if ((shrinkingRate > 1) || (shrinkingRate) < 0)
-    {
-        cerr << "Shrinking Rate for ellipsoids must be in the range [0, 1]. " << endl;
-        exit(EXIT_FAILURE);
-    }
+    // if ((shrinkingRate > 1) || (shrinkingRate) < 0)
+    // {
+    //     cerr << "Shrinking Rate for ellipsoids must be in the range [0, 1]. " << endl;
+    //     exit(EXIT_FAILURE);
+    // }
 
     double terminationFactor = configuringParameters(7);    // Termination factor for nested sampling process.
 
