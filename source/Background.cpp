@@ -29,6 +29,7 @@
 #include "NoGaussianNoColoredBackgroundModel.h"
 #include "StandardSlopeBackgroundModel.h"
 #include "FullBackgroundModel.h"
+#include "TwoHarveyBackgroundModel.h"
 #include "FerozReducer.h"
 #include "PowerlawReducer.h"
 #include "Results.h"
@@ -143,13 +144,14 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------
     
     inputFileName = outputDirName + "NyquistFrequency.txt";
-    //StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
+    // StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
+    TwoHarveyBackgroundModel model(covariates, inputFileName);           // No colored-noise component
     //NoGaussianBackgroundModel model(covariates, inputFileName);      // Colored noise and no Gaussian component
     // NoGaussianNoColoredBackgroundModel model(covariates, inputFileName);      // No colored-noise and no Gaussian component
     // StandardSlopeBackgroundModel model(covariates, inputFileName);   // No colored-noise component but varying slope for 1 component
     // FullBackgroundModel model(covariates, inputFileName);            // All components included, comprising the colored noise
     // SimpleBackgroundModel model(covariates, inputFileName);          // No colored-noise component
-    FlatBackgroundModel model(covariates, inputFileName);          // Only Gaussian envelope and white noise
+    // FlatBackgroundModel model(covariates, inputFileName);          // Only Gaussian envelope and white noise
 
 
     // -----------------------------------------------------------------
@@ -195,7 +197,7 @@ int main(int argc, char *argv[])
 
     bool printNdimensions = false;
     PrincipalComponentProjector projector(printNdimensions);
-    bool featureProjectionActivated = false;
+    bool featureProjectionActivated = true;
 
     EuclideanMetric myMetric;
     // FractionalDistanceMetric myMetric(0.3);
