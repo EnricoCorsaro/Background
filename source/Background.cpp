@@ -14,19 +14,26 @@
 #include "MultiEllipsoidSampler.h"
 #include "Ellipsoid.h"
 #include "KmeansClusterer.h"
+#include "GaussianMixtureClusterer.h"
 #include "EuclideanMetric.h"
+#include "ManhattanMetric.h"
+#include "FractionalDistanceMetric.h"
 #include "Prior.h"
 #include "UniformPrior.h"
 #include "NormalPrior.h"
 #include "ExponentialLikelihood.h"
 #include "StandardBackgroundModel.h"
+#include "FlatBackgroundModel.h"
 #include "SimpleBackgroundModel.h"
 #include "NoGaussianBackgroundModel.h"
+#include "NoGaussianNoColoredBackgroundModel.h"
 #include "StandardSlopeBackgroundModel.h"
 #include "FullBackgroundModel.h"
 #include "FerozReducer.h"
 #include "PowerlawReducer.h"
 #include "Results.h"
+#include "PrincipalComponentProjector.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -36,6 +43,7 @@ int main(int argc, char *argv[])
     if (argc != 3)
     {
         cerr << "Usage: background <KIC ID> <run number>" << endl;
+        // cerr << "Usage: background <TIC ID> <run number>" << endl;
         exit(EXIT_FAILURE);
     }
 
@@ -62,12 +70,15 @@ int main(int argc, char *argv[])
     
     // Set up some string paths used in the computation
     string baseInputDirName = myLocalPath[0] + "data/";
+    // string inputFileName = baseInputDirName + "TIC" + KICID + ".txt";
+    // string outputDirName = myLocalPath[0] + "results/TIC" + KICID + "/";
     string inputFileName = baseInputDirName + "KIC" + KICID + ".txt";
     string outputDirName = myLocalPath[0] + "results/KIC" + KICID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
 
     cerr << "-------------------------- " << endl;
     cerr << " Analyzing KIC" + KICID << endl;
+    // cerr << " Analyzing TIC" + KICID << endl;
     cerr << "-------------------------- " << endl;
     cerr << endl;
 
@@ -132,11 +143,13 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------
     
     inputFileName = outputDirName + "NyquistFrequency.txt";
-    StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
-    // NoGaussianBackgroundModel model(covariates, inputFileName);      // No colored-noise and no Gaussian component
+    //StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
+    //NoGaussianBackgroundModel model(covariates, inputFileName);      // Colored noise and no Gaussian component
+    // NoGaussianNoColoredBackgroundModel model(covariates, inputFileName);      // No colored-noise and no Gaussian component
     // StandardSlopeBackgroundModel model(covariates, inputFileName);   // No colored-noise component but varying slope for 1 component
-    // FullBackgroundModel model(covariates, inputFileName);            // Colored-noise component
+    // FullBackgroundModel model(covariates, inputFileName);            // All components included, comprising the colored noise
     // SimpleBackgroundModel model(covariates, inputFileName);          // No colored-noise component
+    FlatBackgroundModel model(covariates, inputFileName);          // Only Gaussian envelope and white noise
 
 
     // -----------------------------------------------------------------
@@ -176,10 +189,23 @@ int main(int argc, char *argv[])
     }
 
     int Ntrials = 10;
-    double relTolerance = 0.01;
+    double relTolerance = 0.01;      // k-means
+    //double relTolerance = 1.e-3;        // GMM
+
+
+    bool printNdimensions = false;
+    PrincipalComponentProjector projector(printNdimensions);
+    bool featureProjectionActivated = false;
 
     EuclideanMetric myMetric;
-    KmeansClusterer kmeans(myMetric, minNclusters, maxNclusters, Ntrials, relTolerance); 
+    // FractionalDistanceMetric myMetric(0.3);
+    // ManhattanMetric myMetric;
+   
+    //GaussianMixtureClusterer clusterer(myMetric, projector, featureProjectionActivated, 
+    //                                                  minNclusters, maxNclusters, Ntrials, relTolerance); 
+
+    KmeansClusterer clusterer(myMetric, projector, featureProjectionActivated, 
+                           minNclusters, maxNclusters, Ntrials, relTolerance); 
 
 
     // ---------------------------------------------------------------------
@@ -220,8 +246,7 @@ int main(int argc, char *argv[])
 
     double terminationFactor = configuringParameters(7);    // Termination factor for nested sampling process.
 
-    
-    MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, kmeans, 
+    MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, clusterer, 
                                         initialNlivePoints, minNlivePoints, initialEnlargementFraction, shrinkingRate);
     
     double tolerance = 1.e2;
@@ -242,6 +267,7 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << shrinkingRate << endl;
     nestedSampler.outputFile << "# Local working path used: " + myLocalPath[0] << endl;
     nestedSampler.outputFile << "# KIC ID: " + KICID << endl;
+    //nestedSampler.outputFile << "# TIC ID: " + KICID << endl;
     nestedSampler.outputFile << "# Run Number: " + runNumber << endl;
     nestedSampler.outputFile.close();
 
