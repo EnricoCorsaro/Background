@@ -74,7 +74,7 @@ NoGaussianBackgroundModel::~NoGaussianBackgroundModel()
 //
 // NOTE:
 //      The free parameters are to be given in the order
-//      (1) White noise background (flat noise level, ppm^2 / muHz)
+//      (1) White noise background (flat noise level + colored noise level, ppm^2 / muHz)
 //      (2) Amplitude of the background component (ppm)
 //      (3) Frequency of the background component (muHz)
 //
@@ -84,12 +84,14 @@ void NoGaussianBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const
     // Initialize global parameters
 
     double flatNoiseLevel = modelParameters(0);
-    double amplitudeHarvey1 = modelParameters(1);
-    double frequencyHarvey1 = modelParameters(2);
-    double amplitudeHarvey2 = modelParameters(3);
-    double frequencyHarvey2 = modelParameters(4);
-    double amplitudeHarvey3 = modelParameters(5);
-    double frequencyHarvey3 = modelParameters(6);
+    double amplitudeNoise = modelParameters(1);
+    double frequencyNoise = modelParameters(2);
+    double amplitudeHarvey1 = modelParameters(3);
+    double frequencyHarvey1 = modelParameters(4);
+    double amplitudeHarvey2 = modelParameters(5);
+    double frequencyHarvey2 = modelParameters(6);
+    double amplitudeHarvey3 = modelParameters(7);
+    double frequencyHarvey3 = modelParameters(8);
 
 
     // Compute Harvey components and add them to the predictions
@@ -108,5 +110,6 @@ void NoGaussianBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const
     // Add flat noise level component
 
     predictions += flatNoiseLevel;
+    predictions += 2.0*Functions::PI*amplitudeNoise*amplitudeNoise/(frequencyNoise*(1.0 + (covariates/frequencyNoise).pow(2)));
 }
 
