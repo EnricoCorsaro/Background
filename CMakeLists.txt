@@ -15,12 +15,17 @@
 #   - You can change the default compiler by using (e.g. on Mac OSX)"
 #     $ cmake -D CMAKE_CXX_COMPILER=/usr/bin/clang++ ..
 
-
 project(Background)
 
 # cmake version shouldn't be too old
 
 cmake_minimum_required(VERSION 2.8)
+
+
+# Specify OpenMP libraries in your local machine
+
+set(OpenMP_LIBRARIES "/usr/local/opt/libomp/lib")
+set(OpenMP_INCLUDES "/usr/local/opt/libomp/include")
 
 # Specify the location of the Background directory
 
@@ -44,20 +49,31 @@ LINK_DIRECTORIES(${Diamonds_Dir}/build)
               
 file(GLOB sourceFiles ${Background_Dir}/source/*.cpp)
 
-
 # Set the compiler flags
 # First those common to both gcc and clang:
 # -O3   = level 3 optimization; 
 # -Wall = enable all compiler's warning messages
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
-
+set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -lomp -I${OpenMP_INCLUDES} -L${OpenMP_LIBRARIES} -Wno-unused-command-line-argument")
 # Then those specific for the compiler, for using C++11 support.
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -std=c++11 -Wno-deprecated-register")    
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+option (USE_OpenMP "Use OpenMP" ON)
+
+if(USE_OpenMP)
+    message("-- OpenMP Activated")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -stdlib=libc++ -std=c++11 -Wno-deprecated-register")    
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -I${OpenMP_INCLUDES} -L${OpenMP_LIBRARIES} -std=c++0x")
+    endif()
+else()
+    message("-- NO OpenMP Activated")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -std=c++11 -Wno-deprecated-register")    
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    endif()
 endif()
 
 # Create an executable target
@@ -67,4 +83,3 @@ add_executable(background ${sourceFiles})
 # Link the executable with the Diamonds library
 
 target_link_libraries(background diamonds) 
-

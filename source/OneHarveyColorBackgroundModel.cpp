@@ -1,7 +1,7 @@
-#include "TwoHarveyBackgroundModel.h"
+#include "OneHarveyColorBackgroundModel.h"
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// OneHarveyColorBackgroundModel::OneHarveyColorBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -13,7 +13,7 @@
 //                                          value of the Nyquist frequency to be adopted in the response function.
 //
 
-TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
+OneHarveyColorBackgroundModel::OneHarveyColorBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
 : BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler LC data
@@ -36,13 +36,13 @@ TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, 
 
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// OneHarveyColorBackgroundModel::OneHarveyColorBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
+OneHarveyColorBackgroundModel::~OneHarveyColorBackgroundModel()
 {
 
 }
@@ -56,7 +56,7 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 
 
 
-// TwoHarveyBackgroundModel::predict()
+// OneHarveyColorBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a background model for red giant stars.
@@ -78,24 +78,22 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 // NOTE:
 //      The free parameters are to be given in the order
 //      (1) White noise background (flat noise level, ppm^2 / muHz)
-//      (2) Colored noise amplitude (ppm)
-//      (3) Colored noise frequency (muHz)
-//      (4) Amplitude of the background component (ppm)
-//      (5) Frequency of the background component (muHz)
-//      (6) Height of the oscillation envelope (ppm^2 / muHz)
-//      (7) nuMax (muHz)
-//      (8) sigma (muHz)
+//      (2) Amplitude of the background component (ppm)
+//      (3) Frequency of the background component (muHz)
+//      (4) Height of the oscillation envelope (ppm^2 / muHz)
+//      (5) nuMax (muHz)
+//      (6) sigma (muHz)
 //
 
-void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void OneHarveyColorBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     // Initialize global parameters
 
     double flatNoiseLevel = modelParameters(0);
-    double amplitudeHarvey1 = modelParameters(1);
-    double frequencyHarvey1 = modelParameters(2);
-    double amplitudeHarvey2 = modelParameters(3);
-    double frequencyHarvey2 = modelParameters(4);
+    double amplitudeNoise = modelParameters(1);
+    double frequencyNoise = modelParameters(2);
+    double amplitudeHarvey1 = modelParameters(3);
+    double frequencyHarvey1 = modelParameters(4);
     double heightOscillation = modelParameters(5);
     double nuMax = modelParameters(6);
     double sigma = modelParameters(7);
@@ -105,7 +103,6 @@ void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const 
 
     double zeta = 2.0*sqrt(2.0)/Functions::PI;
     predictions = zeta*amplitudeHarvey1*amplitudeHarvey1/(frequencyHarvey1*(1.0 + (covariates/frequencyHarvey1).pow(4)));
-    predictions += zeta*amplitudeHarvey2*amplitudeHarvey2/(frequencyHarvey2*(1.0 + (covariates/frequencyHarvey2).pow(4)));
 
 
     // Compute Gaussian envelope for RGB Oscillations and add it to the predictions
@@ -121,6 +118,7 @@ void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const 
     // Add flat noise and colored noise components
 
     predictions += flatNoiseLevel;
+    predictions += 2.0*Functions::PI*amplitudeNoise*amplitudeNoise/(frequencyNoise*(1.0 + (covariates/frequencyNoise).pow(2)));
 }
 
 

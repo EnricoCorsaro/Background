@@ -1,7 +1,7 @@
-#include "TwoHarveyBackgroundModel.h"
+#include "TwoHarveyColorBackgroundModel.h"
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// TwoHarveyColorBackgroundModel::TwoHarveyColorBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -13,7 +13,7 @@
 //                                          value of the Nyquist frequency to be adopted in the response function.
 //
 
-TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
+TwoHarveyColorBackgroundModel::TwoHarveyColorBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
 : BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler LC data
@@ -36,13 +36,13 @@ TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, 
 
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// TwoHarveyColorBackgroundModel::TwoHarveyColorBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
+TwoHarveyColorBackgroundModel::~TwoHarveyColorBackgroundModel()
 {
 
 }
@@ -56,7 +56,7 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 
 
 
-// TwoHarveyBackgroundModel::predict()
+// TwoHarveyColorBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a background model for red giant stars.
@@ -87,18 +87,20 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 //      (8) sigma (muHz)
 //
 
-void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void TwoHarveyColorBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     // Initialize global parameters
 
     double flatNoiseLevel = modelParameters(0);
-    double amplitudeHarvey1 = modelParameters(1);
-    double frequencyHarvey1 = modelParameters(2);
-    double amplitudeHarvey2 = modelParameters(3);
-    double frequencyHarvey2 = modelParameters(4);
-    double heightOscillation = modelParameters(5);
-    double nuMax = modelParameters(6);
-    double sigma = modelParameters(7);
+    double amplitudeNoise = modelParameters(1);
+    double frequencyNoise = modelParameters(2);
+    double amplitudeHarvey1 = modelParameters(3);
+    double frequencyHarvey1 = modelParameters(4);
+    double amplitudeHarvey2 = modelParameters(5);
+    double frequencyHarvey2 = modelParameters(6);
+    double heightOscillation = modelParameters(7);
+    double nuMax = modelParameters(8);
+    double sigma = modelParameters(9);
 
 
     // Compute Harvey components and add them to the predictions
@@ -121,6 +123,7 @@ void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const 
     // Add flat noise and colored noise components
 
     predictions += flatNoiseLevel;
+    predictions += 2.0*Functions::PI*amplitudeNoise*amplitudeNoise/(frequencyNoise*(1.0 + (covariates/frequencyNoise).pow(2)));
 }
 
 

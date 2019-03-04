@@ -1,6 +1,5 @@
-// Derived class for global background fit to photometric power spectra with colored-noise 
-// included (typical for low frequency stars, nuMax < 50 muHz).
-// Created by Enrico Corsaro @ OACT - November 2018
+// Derived class for global background fit to photometric power spectra with no colored-noise and no long-trend component
+// Created by Enrico Corsaro @ OACT - January 2019
 // e-mail: emncorsaro@gmail.com
 // Header file "TwoHarveyBackgroundModel.h"
 // Implementations contained in "TwoHarveyBackgroundModel.cpp"

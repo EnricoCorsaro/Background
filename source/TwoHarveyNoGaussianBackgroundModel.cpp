@@ -1,7 +1,7 @@
-#include "TwoHarveyBackgroundModel.h"
+#include "TwoHarveyNoGaussianBackgroundModel.h"
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// TwoHarveyNoGaussianBackgroundModel::TwoHarveyNoGaussianBackgroundModel()
 //
 // PURPOSE: 
 //      Constructor. Initializes model computation.
@@ -13,7 +13,7 @@
 //                                          value of the Nyquist frequency to be adopted in the response function.
 //
 
-TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
+TwoHarveyNoGaussianBackgroundModel::TwoHarveyNoGaussianBackgroundModel(const RefArrayXd covariates, const string inputNyquistFrequencyFileName)
 : BackgroundModel(covariates)
 {
     // Create response function modulating the sampling rate of input Kepler LC data
@@ -36,13 +36,13 @@ TwoHarveyBackgroundModel::TwoHarveyBackgroundModel(const RefArrayXd covariates, 
 
 
 
-// TwoHarveyBackgroundModel::TwoHarveyBackgroundModel()
+// TwoHarveyNoGaussianBackgroundModel::TwoHarveyNoGaussianBackgroundModel()
 //
 // PURPOSE: 
 //      Destructor.
 //
 
-TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
+TwoHarveyNoGaussianBackgroundModel::~TwoHarveyNoGaussianBackgroundModel()
 {
 
 }
@@ -56,15 +56,13 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 
 
 
-// TwoHarveyBackgroundModel::predict()
+// TwoHarveyNoGaussianBackgroundModel::predict()
 //
 // PURPOSE:
 //      Builds the predictions from a background model for red giant stars.
-//      The model consists of one constant component, two Harvey-like profiles
-//      and a Gaussian for modeling the oscillation envelope.
+//      The model consists of one constant component and two Harvey-like profiles.
 //      The Harvey-like profile for long-trend variations is not considered in this model.
-//      This model is more suited for very low-numax stars.
-//      A component for colored noise is included, more indicated for low-numax stars
+//      This model is more suited for low numax and low frequency resolution spectra.
 //
 // INPUT:
 //      predictions:        one-dimensional array to contain the predictions
@@ -78,16 +76,11 @@ TwoHarveyBackgroundModel::~TwoHarveyBackgroundModel()
 // NOTE:
 //      The free parameters are to be given in the order
 //      (1) White noise background (flat noise level, ppm^2 / muHz)
-//      (2) Colored noise amplitude (ppm)
-//      (3) Colored noise frequency (muHz)
-//      (4) Amplitude of the background component (ppm)
-//      (5) Frequency of the background component (muHz)
-//      (6) Height of the oscillation envelope (ppm^2 / muHz)
-//      (7) nuMax (muHz)
-//      (8) sigma (muHz)
+//      (2) Amplitude of the background component (ppm)
+//      (3) Frequency of the background component (muHz)
 //
 
-void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
+void TwoHarveyNoGaussianBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const modelParameters)
 {
     // Initialize global parameters
 
@@ -96,9 +89,6 @@ void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const 
     double frequencyHarvey1 = modelParameters(2);
     double amplitudeHarvey2 = modelParameters(3);
     double frequencyHarvey2 = modelParameters(4);
-    double heightOscillation = modelParameters(5);
-    double nuMax = modelParameters(6);
-    double sigma = modelParameters(7);
 
 
     // Compute Harvey components and add them to the predictions
@@ -108,11 +98,6 @@ void TwoHarveyBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const 
     predictions += zeta*amplitudeHarvey2*amplitudeHarvey2/(frequencyHarvey2*(1.0 + (covariates/frequencyHarvey2).pow(4)));
 
 
-    // Compute Gaussian envelope for RGB Oscillations and add it to the predictions
-
-    predictions += heightOscillation * exp(-1.0*(nuMax - covariates)*(nuMax - covariates)/(2.0 * sigma * sigma));
-
-    
     // Modulate the model by the response function (apodization)
     
     predictions *= responseFunction;           
