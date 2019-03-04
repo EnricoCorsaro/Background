@@ -1,5 +1,6 @@
 // Main code for background fitting to red giant stars by means of nested sampling analysis
 // Created by Enrico Corsaro @ IvS - July 2014
+// Edited by Enrico Corsaro @ OACT - January 2019
 // Last update: April 2016 @ CEA
 // e-mail: emncorsaro@gmail.com
 // Source code file "Background.cpp"
@@ -14,22 +15,24 @@
 #include "MultiEllipsoidSampler.h"
 #include "Ellipsoid.h"
 #include "KmeansClusterer.h"
-#include "GaussianMixtureClusterer.h"
+#include "ParallelGaussianMixtureClusterer.h"
 #include "EuclideanMetric.h"
-#include "ManhattanMetric.h"
-#include "FractionalDistanceMetric.h"
 #include "Prior.h"
 #include "UniformPrior.h"
 #include "NormalPrior.h"
 #include "ExponentialLikelihood.h"
-#include "StandardBackgroundModel.h"
-#include "FlatBackgroundModel.h"
-#include "SimpleBackgroundModel.h"
-#include "NoGaussianBackgroundModel.h"
-#include "NoGaussianNoColoredBackgroundModel.h"
-#include "StandardSlopeBackgroundModel.h"
-#include "FullBackgroundModel.h"
+#include "ThreeHarveyColorBackgroundModel.h"
+#include "ThreeHarveyColorNoGaussianBackgroundModel.h"
+#include "ThreeHarveyBackgroundModel.h"
+#include "ThreeHarveyNoGaussianBackgroundModel.h"
+#include "TwoHarveyColorBackgroundModel.h"
 #include "TwoHarveyBackgroundModel.h"
+#include "TwoHarveyNoGaussianBackgroundModel.h"
+#include "OneHarveyColorBackgroundModel.h"
+#include "OneHarveyBackgroundModel.h"
+#include "OriginalBackgroundModel.h"
+#include "FlatBackgroundModel.h"
+#include "FlatNoGaussianBackgroundModel.h"
 #include "FerozReducer.h"
 #include "PowerlawReducer.h"
 #include "Results.h"
@@ -41,12 +44,12 @@ int main(int argc, char *argv[])
 
     // Check number of arguments for main function
     
-    if (argc != 3)
+    if (argc != 6)
     {
-        cerr << "Usage: background <KIC ID> <run number>" << endl;
-        // cerr << "Usage: background <TIC ID> <run number>" << endl;
+        cerr << "Usage: ./background <Input Label> <Star ID> <run number> <background model> <PCA flag> " << endl;
         exit(EXIT_FAILURE);
     }
+    
 
 
     // ---------------------------
@@ -56,8 +59,12 @@ int main(int argc, char *argv[])
     unsigned long Nrows;
     int Ncols;
     ArrayXXd data;
-    string KICID(argv[1]);
-    string runNumber(argv[2]);
+    string inputLabel(argv[1]);
+    string StarID(argv[2]);
+    string runNumber(argv[3]);
+    string backgroundModelName(argv[4]);
+    string inputPCAflag(argv[5]);
+    double PCAflag = stod(inputPCAflag);
 
 
     // Read the local path for the working session from an input ASCII file
@@ -71,17 +78,15 @@ int main(int argc, char *argv[])
     
     // Set up some string paths used in the computation
     string baseInputDirName = myLocalPath[0] + "data/";
-    // string inputFileName = baseInputDirName + "TIC" + KICID + ".txt";
-    // string outputDirName = myLocalPath[0] + "results/TIC" + KICID + "/";
-    string inputFileName = baseInputDirName + "KIC" + KICID + ".txt";
-    string outputDirName = myLocalPath[0] + "results/KIC" + KICID + "/";
+    string inputFileName = baseInputDirName + inputLabel + StarID + ".txt";
+    string outputDirName = myLocalPath[0] + "results/" + inputLabel + StarID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
-
+    
     cerr << "-------------------------- " << endl;
-    cerr << " Analyzing KIC" + KICID << endl;
-    // cerr << " Analyzing TIC" + KICID << endl;
+    cerr << " Background analysis of " + inputLabel + StarID << endl;
     cerr << "-------------------------- " << endl;
     cerr << endl;
+    
 
 
     // Read the input dataset
@@ -144,21 +149,86 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------
     
     inputFileName = outputDirName + "NyquistFrequency.txt";
-    // StandardBackgroundModel model(covariates, inputFileName);           // No colored-noise component
-    TwoHarveyBackgroundModel model(covariates, inputFileName);           // No colored-noise component
-    //NoGaussianBackgroundModel model(covariates, inputFileName);      // Colored noise and no Gaussian component
-    // NoGaussianNoColoredBackgroundModel model(covariates, inputFileName);      // No colored-noise and no Gaussian component
-    // StandardSlopeBackgroundModel model(covariates, inputFileName);   // No colored-noise component but varying slope for 1 component
-    // FullBackgroundModel model(covariates, inputFileName);            // All components included, comprising the colored noise
-    // SimpleBackgroundModel model(covariates, inputFileName);          // No colored-noise component
-    // FlatBackgroundModel model(covariates, inputFileName);          // Only Gaussian envelope and white noise
+    BackgroundModel *model = nullptr;
 
+    // Long-trend, meso-granulation, and granulation component included, with colored noise
+    if (backgroundModelName == "ThreeHarveyColor")
+    {
+        model = new ThreeHarveyColorBackgroundModel(covariates, inputFileName); 
+    }
+    
+    // Long-trend, meso-granulation, and granulation component included, with colored noise but no Gaussian envelope
+    if (backgroundModelName == "ThreeHarveyColorNoGaussian")
+    {
+        model = new ThreeHarveyColorNoGaussianBackgroundModel(covariates, inputFileName); 
+    }
+    
+    // Long-trend, meso-granulation, and granulation component included, but no colored noise
+    if (backgroundModelName == "ThreeHarvey")
+    {
+        model = new ThreeHarveyBackgroundModel(covariates, inputFileName);
+    }
+    
+    // Long-trend, meso-granulation, and granulation component included, but no colored noise and no Gaussian envelope
+    if (backgroundModelName == "ThreeHarveyNoGaussian")
+    {
+        model = new ThreeHarveyNoGaussianBackgroundModel(covariates, inputFileName); 
+    }
+
+    // Meso-granulation and granulation components included, with colored noise
+    if (backgroundModelName == "TwoHarveyColor")
+    {
+        model = new TwoHarveyColorBackgroundModel(covariates, inputFileName);   
+    }
+    
+    // Meso-granulation and granulation components included, but no colored noise
+    if (backgroundModelName == "TwoHarvey")
+    {
+        model = new TwoHarveyBackgroundModel(covariates, inputFileName);   
+    }
+
+    // Meso-granulation and granulation components included, but no colored noise and no Gaussian envelope
+    if (backgroundModelName == "TwoHarveyNoGaussian")
+    {
+        model = new TwoHarveyNoGaussianBackgroundModel(covariates, inputFileName);   
+    }
+
+    // Only meso-granulation component included, with colored noise
+    if (backgroundModelName == "OneHarveyColor")
+    {    
+        model = new OneHarveyColorBackgroundModel(covariates, inputFileName); 
+    }
+    
+    // Only meso-granulation component included, but no colored noise
+    if (backgroundModelName == "OneHarvey")
+    {    
+        model = new OneHarveyBackgroundModel(covariates, inputFileName); 
+    }
+    
+    // Only meso-granulation component included, but no colored noise and using the original Harvey law (exponent = 2)
+    if (backgroundModelName == "Original")
+    {    
+        model = new OriginalBackgroundModel(covariates, inputFileName); 
+    }
+
+    // Only Gaussian envelope and white noise
+    if (backgroundModelName == "Flat")
+    {    
+        model = new FlatBackgroundModel(covariates, inputFileName); 
+    }
+    
+    // Only white noise, without Gaussian envelope
+    if (backgroundModelName == "FlatNoGaussian")
+    {    
+        model = new FlatNoGaussianBackgroundModel(covariates, inputFileName); 
+    }
+    
 
     // -----------------------------------------------------------------
     // ----- Third step. Set up the likelihood function to be used -----
     // -----------------------------------------------------------------
     
-    ExponentialLikelihood likelihood(observations, model);
+    ExponentialLikelihood likelihood(observations, *model);
     
 
     // -------------------------------------------------------------------------------
@@ -172,7 +242,7 @@ int main(int argc, char *argv[])
 
     if (Nparameters != 2)
     {
-        cerr << "Wrong number of input parameters for X-means algorithm." << endl;
+        cerr << "Wrong number of input parameters for clustering algorithm." << endl;
         exit(EXIT_FAILURE);
     }
 
@@ -192,23 +262,20 @@ int main(int argc, char *argv[])
 
     int Ntrials = 10;
     double relTolerance = 0.01;      // k-means
-    //double relTolerance = 1.e-3;        // GMM
-
 
     bool printNdimensions = false;
     PrincipalComponentProjector projector(printNdimensions);
-    bool featureProjectionActivated = true;
+    bool featureProjectionActivated = false;
+    
+    if (PCAflag == 1)
+    {
+        featureProjectionActivated = true;
+    }
 
     EuclideanMetric myMetric;
-    // FractionalDistanceMetric myMetric(0.3);
-    // ManhattanMetric myMetric;
-   
-    //GaussianMixtureClusterer clusterer(myMetric, projector, featureProjectionActivated, 
-    //                                                  minNclusters, maxNclusters, Ntrials, relTolerance); 
-
     KmeansClusterer clusterer(myMetric, projector, featureProjectionActivated, 
                            minNclusters, maxNclusters, Ntrials, relTolerance); 
-
+    
 
     // ---------------------------------------------------------------------
     // ----- Sixth step. Configure and start nested sampling inference -----
@@ -227,26 +294,41 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    bool printOnTheScreen = true;                        // Print results on the screen
-    int initialNlivePoints = configuringParameters(0);   // Initial number of live points 
-    int minNlivePoints = configuringParameters(1);       // Minimum number of live points 
-    int maxNdrawAttempts = configuringParameters(2);     // Maximum number of attempts when trying to draw a new sampling point
-    int NinitialIterationsWithoutClustering = configuringParameters(3); // The first N iterations, we assume that there is only 1 cluster
-    int NiterationsWithSameClustering = configuringParameters(4);       // Clustering is only happening every N iterations.
-    double initialEnlargementFraction = 0.369*pow(Ndimensions,0.574); // requires Nlive = 500; configuringParameters(5);   
-                                                                      //  Fraction by which each axis in an ellipsoid has to be enlarged.
-                                                                      // It can be a number >= 0, where 0 means no enlargement.
-    double shrinkingRate = configuringParameters(6);        // Exponent for remaining prior mass in ellipsoid enlargement fraction.
-                                                            // It is a number between 0 and 1. The smaller the slower the shrinkage
-                                                            // of the ellipsoids.
-                                                            
+    // Print results on the screen
+    bool printOnTheScreen = true;                        
+
+    // Initial number of live points
+    int initialNlivePoints = configuringParameters(0);   
+    
+    // Minimum number of live points
+    int minNlivePoints = configuringParameters(1);       
+
+    // Maximum number of attempts when trying to draw a new sampling point
+    int maxNdrawAttempts = configuringParameters(2);    
+    
+    // The first N iterations, we assume that there is only 1 cluster
+    int NinitialIterationsWithoutClustering = configuringParameters(3);
+
+    // Clustering is only happening every N iterations
+    int NiterationsWithSameClustering = configuringParameters(4);
+    
+    // Fraction by which each axis in an ellipsoid has to be enlarged
+    // It can be a number >= 0, where 0 means no enlargement. configuringParameters(5)
+    // Calibration from Corsaro et al. (2018)
+    double initialEnlargementFraction = 0.369*pow(Ndimensions,0.574);    
+
+    // Exponent for remaining prior mass in ellipsoid enlargement fraction
+    // It is a number between 0 and 1. The smaller the slower the shrinkage // of the ellipsoids.
+    double shrinkingRate = configuringParameters(6);
+                                                                                                                        
     // if ((shrinkingRate > 1) || (shrinkingRate) < 0)
     // {
     //     cerr << "Shrinking Rate for ellipsoids must be in the range [0, 1]. " << endl;
     //     exit(EXIT_FAILURE);
     // }
 
-    double terminationFactor = configuringParameters(7);    // Termination factor for nested sampling process.
+    // Termination factor for nested sampling process
+    double terminationFactor = configuringParameters(7);    
 
     MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, clusterer, 
                                         initialNlivePoints, minNlivePoints, initialEnlargementFraction, shrinkingRate);
@@ -256,9 +338,9 @@ int main(int argc, char *argv[])
     PowerlawReducer livePointsReducer(nestedSampler, tolerance, exponent, terminationFactor);
  
     nestedSampler.run(livePointsReducer, NinitialIterationsWithoutClustering, NiterationsWithSameClustering, 
-                      maxNdrawAttempts, terminationFactor, outputPathPrefix);
+                      maxNdrawAttempts, terminationFactor, 0, outputPathPrefix);
 
-    nestedSampler.outputFile << "# List of configuring parameters used for the ellipsoidal sampler and X-means" << endl;
+    nestedSampler.outputFile << "# List of configuring parameters used for the ellipsoidal sampler and cluster algorithm" << endl;
     nestedSampler.outputFile << "# Row #1: Minimum Nclusters" << endl;
     nestedSampler.outputFile << "# Row #2: Maximum Nclusters" << endl;
     nestedSampler.outputFile << "# Row #3: Initial Enlargement Fraction" << endl;
@@ -267,10 +349,17 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << maxNclusters << endl;
     nestedSampler.outputFile << initialEnlargementFraction << endl;
     nestedSampler.outputFile << shrinkingRate << endl;
-    nestedSampler.outputFile << "# Local working path used: " + myLocalPath[0] << endl;
-    nestedSampler.outputFile << "# KIC ID: " + KICID << endl;
-    //nestedSampler.outputFile << "# TIC ID: " + KICID << endl;
-    nestedSampler.outputFile << "# Run Number: " + runNumber << endl;
+    nestedSampler.outputFile << "# Other information on the run" << endl;
+    nestedSampler.outputFile << "# Row #1: Local working path used" << endl;
+    nestedSampler.outputFile << "# Row #2: Label and Star ID" << endl;
+    nestedSampler.outputFile << "# Row #3: Run Number" << endl;
+    nestedSampler.outputFile << "# Row #4: Background model adopted" << endl;
+    nestedSampler.outputFile << "# Row #5: PCA activated (1 = yes / 0 = no)" << endl;
+    nestedSampler.outputFile << myLocalPath[0] << endl;
+    nestedSampler.outputFile << inputLabel + StarID << endl;
+    nestedSampler.outputFile << runNumber << endl;
+    nestedSampler.outputFile << backgroundModelName << endl;
+    nestedSampler.outputFile << featureProjectionActivated << endl;
     nestedSampler.outputFile.close();
 
 
