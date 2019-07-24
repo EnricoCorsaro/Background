@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     
     if (argc != 6)
     {
-        cerr << "Usage: ./background <Input Label> <Star ID> <run number> <background model> <PCA flag> " << endl;
+        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <PCA flag> " << endl;
         exit(EXIT_FAILURE);
     }
     
@@ -59,12 +59,12 @@ int main(int argc, char *argv[])
     unsigned long Nrows;
     int Ncols;
     ArrayXXd data;
-    string inputLabel(argv[1]);
+    string CatalogID(argv[1]);
     string StarID(argv[2]);
     string runNumber(argv[3]);
     string backgroundModelName(argv[4]);
     string inputPCAflag(argv[5]);
-    double PCAflag = stod(inputPCAflag);
+    int PCAflag = stoi(inputPCAflag);
 
 
     // Read the local path for the working session from an input ASCII file
@@ -78,12 +78,12 @@ int main(int argc, char *argv[])
     
     // Set up some string paths used in the computation
     string baseInputDirName = myLocalPath[0] + "data/";
-    string inputFileName = baseInputDirName + inputLabel + StarID + ".txt";
-    string outputDirName = myLocalPath[0] + "results/" + inputLabel + StarID + "/";
+    string inputFileName = baseInputDirName + CatalogID + StarID + ".txt";
+    string outputDirName = myLocalPath[0] + "results/" + CatalogID + StarID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
     
     cerr << "-------------------------- " << endl;
-    cerr << " Background analysis of " + inputLabel + StarID << endl;
+    cerr << " Background analysis of " + CatalogID + StarID << endl;
     cerr << "-------------------------- " << endl;
     cerr << endl;
     
@@ -295,39 +295,50 @@ int main(int argc, char *argv[])
     }
 
     // Print results on the screen
+    
     bool printOnTheScreen = true;                        
 
+    
     // Initial number of live points
+    
     int initialNlivePoints = configuringParameters(0);   
     
+    
     // Minimum number of live points
+    
     int minNlivePoints = configuringParameters(1);       
 
+    
     // Maximum number of attempts when trying to draw a new sampling point
+    
     int maxNdrawAttempts = configuringParameters(2);    
     
+    
     // The first N iterations, we assume that there is only 1 cluster
+    
     int NinitialIterationsWithoutClustering = configuringParameters(3);
 
+    
     // Clustering is only happening every N iterations
+    
     int NiterationsWithSameClustering = configuringParameters(4);
+    
     
     // Fraction by which each axis in an ellipsoid has to be enlarged
     // It can be a number >= 0, where 0 means no enlargement. configuringParameters(5)
     // Calibration from Corsaro et al. (2018)
+    
     double initialEnlargementFraction = 0.369*pow(Ndimensions,0.574);    
 
+    
     // Exponent for remaining prior mass in ellipsoid enlargement fraction
     // It is a number between 0 and 1. The smaller the slower the shrinkage // of the ellipsoids.
+    
     double shrinkingRate = configuringParameters(6);
                                                                                                                         
-    // if ((shrinkingRate > 1) || (shrinkingRate) < 0)
-    // {
-    //     cerr << "Shrinking Rate for ellipsoids must be in the range [0, 1]. " << endl;
-    //     exit(EXIT_FAILURE);
-    // }
-
+    
     // Termination factor for nested sampling process
+    
     double terminationFactor = configuringParameters(7);    
 
     MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, clusterer, 
@@ -351,12 +362,12 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << shrinkingRate << endl;
     nestedSampler.outputFile << "# Other information on the run" << endl;
     nestedSampler.outputFile << "# Row #1: Local working path used" << endl;
-    nestedSampler.outputFile << "# Row #2: Label and Star ID" << endl;
+    nestedSampler.outputFile << "# Row #2: Catalog and Star ID" << endl;
     nestedSampler.outputFile << "# Row #3: Run Number" << endl;
     nestedSampler.outputFile << "# Row #4: Background model adopted" << endl;
     nestedSampler.outputFile << "# Row #5: PCA activated (1 = yes / 0 = no)" << endl;
     nestedSampler.outputFile << myLocalPath[0] << endl;
-    nestedSampler.outputFile << inputLabel + StarID << endl;
+    nestedSampler.outputFile << CatalogID + StarID << endl;
     nestedSampler.outputFile << runNumber << endl;
     nestedSampler.outputFile << backgroundModelName << endl;
     nestedSampler.outputFile << featureProjectionActivated << endl;
