@@ -1,7 +1,7 @@
 # Background extension to DIAMONDS
 <p align="center">
 <a href="https://github.com/EnricoCorsaro/Background"><img src="https://img.shields.io/badge/GitHub-Background-yellow"/></a>
-<a href="https://github.com/EnricoCorsaro/DIAMONDS/blob/master/LICENSE.txt"><img src="https://img.shields.io/badge/license-CC%20BY--SA-blue"/></a>
+<a href="https://github.com/EnricoCorsaro/Background/blob/master/LICENSE.txt"><img src="https://img.shields.io/badge/license-CC%20BY--SA-blue"/></a>
 <a href='https://diamonds.readthedocs.io/en/latest/?badge=latest'><img src='https://readthedocs.org/projects/diamonds/badge/?version=latest' alt='Documentation Status' /></a>
 <a href="https://github.com/EnricoCorsaro/Background/issues"><img src="https://img.shields.io/github/issues-closed/EnricoCorsaro/Background"/></a>
 <img width="500" src="https://raw.githubusercontent.com/EnricoCorsaro/DIAMONDS/master/docs/figures/DIAMONDS_LOGO_WHITE.png"/>
