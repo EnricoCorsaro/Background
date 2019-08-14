@@ -15,7 +15,6 @@
 #include "MultiEllipsoidSampler.h"
 #include "Ellipsoid.h"
 #include "KmeansClusterer.h"
-#include "ParallelGaussianMixtureClusterer.h"
 #include "EuclideanMetric.h"
 #include "Prior.h"
 #include "UniformPrior.h"
