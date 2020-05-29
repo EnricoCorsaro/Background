@@ -29,6 +29,7 @@
 #include "TwoHarveyNoGaussianBackgroundModel.h"
 #include "OneHarveyColorBackgroundModel.h"
 #include "OneHarveyBackgroundModel.h"
+#include "OneHarveyNoGaussianBackgroundModel.h"
 #include "OriginalBackgroundModel.h"
 #include "FlatBackgroundModel.h"
 #include "FlatNoGaussianBackgroundModel.h"
@@ -43,13 +44,12 @@ int main(int argc, char *argv[])
 
     // Check number of arguments for main function
     
-    if (argc != 6)
+    if (argc != 7)
     {
-        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <PCA flag> " << endl;
+        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <input prior base filename> <PCA flag> " << endl;
         exit(EXIT_FAILURE);
     }
     
-
 
     // ---------------------------
     // ----- Read input data -----
@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
     string StarID(argv[2]);
     string runNumber(argv[3]);
     string backgroundModelName(argv[4]);
-    string inputPCAflag(argv[5]);
+    string inputPriorBaseName(argv[5]); 
+    string inputPCAflag(argv[6]);
     int PCAflag = stoi(inputPCAflag);
 
 
@@ -81,11 +82,10 @@ int main(int argc, char *argv[])
     string outputDirName = myLocalPath[0] + "results/" + CatalogID + StarID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
     
-    cerr << "-------------------------- " << endl;
+    cerr << "------------------------------------------------ " << endl;
     cerr << " Background analysis of " + CatalogID + StarID << endl;
-    cerr << "-------------------------- " << endl;
-    cerr << endl;
-    
+    cerr << "------------------------------------------------ " << endl;
+    cerr << endl; 
 
 
     // Read the input dataset
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     unsigned long Ndimensions;              // Number of parameters for which prior distributions are defined
     
     // Read prior hyper parameters for resolved modes
-    inputFileName = outputDirName + "background_hyperParameters.txt";
+    inputFileName = outputDirName + inputPriorBaseName + "_" + runNumber + ".txt";
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Ndimensions, Ncols);
     
@@ -122,8 +122,15 @@ int main(int argc, char *argv[])
     
     if (Ncols != 2)
     {
-        cerr << "Wrong number of input prior boundaries." << endl;
-        cerr << "Two boundaries are required for uniform priors." << endl;
+        cerr << " Wrong number of input prior boundaries." << endl;
+        cerr << " Two boundaries are required for uniform priors." << endl;
+    }
+    else
+    {
+        cerr << "-------------------------------------------------- " << endl;
+        cerr << " Reading prior file " + inputPriorBaseName + "_" + runNumber + ".txt" << endl;
+        cerr << "-------------------------------------------------- " << endl;
+        cerr << " " << endl;
     }
     
     ArrayXXd hyperParameters;
@@ -204,6 +211,12 @@ int main(int argc, char *argv[])
         model = new OneHarveyBackgroundModel(covariates, inputFileName); 
     }
     
+        // Only meso-granulation component included, but no colored noise and no Gaussian envelope
+    if (backgroundModelName == "OneHarveyNoGaussian")
+    {    
+        model = new OneHarveyNoGaussianBackgroundModel(covariates, inputFileName); 
+    }
+
     // Only meso-granulation component included, but no colored noise and using the original Harvey law (exponent = 2)
     if (backgroundModelName == "Original")
     {    
