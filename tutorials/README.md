@@ -17,5 +17,5 @@ To run the tutorial follow the procedure:
 5. Move the folder `KIC012008916` (and all its content) under `Background/results/`
 6. Go to `Background/build/`
 7. Execute the code for this tutorial by using the command line 
-`./background KIC 012008916 00 ThreeHarvey 0`
+`./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0`
 8. Once the computation is completed, you can plot the results with Python by using `plot_background.py` provided in the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background.
