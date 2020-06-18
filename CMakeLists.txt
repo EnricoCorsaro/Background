@@ -28,7 +28,7 @@ set(Background_Dir ${CMAKE_SOURCE_DIR})
 # Specify the location of the Diamonds directory
 
 get_filename_component(Parent_Dir ${Background_Dir}/ PATH)
-set(Diamonds_Dir ${Parent_Dir}/Diamonds)
+set(Diamonds_Dir ${Parent_Dir}/DIAMONDS)
 
 # Specify the location of the header files
 
