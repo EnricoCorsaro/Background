@@ -17,7 +17,9 @@ To run the tutorial follow the procedure:
 5. Move the folder `KIC012008916` (and all its content) under `Background/results/`
 6. Go to `Background/build/`
 7. Execute the code for this tutorial by using the command line 
-`./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0`
+```bash
+./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0
+```
 8. Once the computation is completed, you can plot the results with Python by using `plot_background.py` provided in the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background.
 
 # Tutorial for generating new background priors and all the files needed to execute a fit
@@ -36,6 +38,8 @@ set_background_priors('KIC','012008916',162,'ThreeHarvey’,1)
 
 The call to the method `set_background_priors` requires 5 input parameters, namely the catalog ID and star ID, a guess for nuMax (in microHz), the name of the background model for which the priors are desired (among those provided in the Background code package), and an integer specifying the name of the subfolder where we want to store the results from the fit.
 
-This tutorial will generate a new background_hyperParameters_01.txt file inside the star folder `Background/results/KIC012008916/`, as well as the required configuring files for DIAMONDS (i.e. `NSMC_configuringParameters.txt`, `Xmeans_configuringParameters.txt`, and `NyquistFrequency.txt`). It will also create the entire output star folder if none is present. You will be able to run the corresponding fit going to `Background/build/` and executing the command line `./background KIC 012008916 01 ThreeHarvey background_hyperParameters 0`
-
+This tutorial will generate a new `background_hyperParameters_01.txt` file inside the star folder `Background/results/KIC012008916/`, as well as the required configuring files for DIAMONDS (i.e. `NSMC_configuringParameters.txt`, `Xmeans_configuringParameters.txt`, and `NyquistFrequency.txt`). It will also create the entire output star folder if none is present. You will be able to run the corresponding fit going to `Background/build/` and executing the command line 
+```bash
+./background KIC 012008916 01 ThreeHarvey background_hyperParameters 0
+```
 All the results from the fit will be stored in the folder `Background/results/KIC012008916/01/`.
