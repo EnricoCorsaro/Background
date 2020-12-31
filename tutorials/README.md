@@ -19,3 +19,18 @@ To run the tutorial follow the procedure:
 7. Execute the code for this tutorial by using the command line 
 `./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0`
 8. Once the computation is completed, you can plot the results with Python by using `plot_background.py` provided in the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background.
+
+# Tutorial for generating new background priors and all the files needed to execute a fit
+
+This tutorial allows you to generate all the required files for running a new background fit on any input star by starting from the dataset and a raw guess for nuMax. With this tutorial the user will be able to generate the uniform prior boundaries on each free parameter of the background model that is intended to fit. The user can choose any background model among those implemented in the Background code.
+
+1. Move the file `set_background_priors.py` inside the folder `Background/results/python/` (create one if you don’t have one already)
+2. Make sure you have the datafile of the star you want to analyze already placed inside the folder `Background/data`, having the same format of the one used in the first tutorial. To illustrate this tutorial we consider the star KIC 12008916
+3. Go to `Background/results/python` and open a python prompt (e.g. IPython)
+4. In the python prompt execute the commands
+	- `from set_background_priors import *`
+	- `set_background_priors('KIC','012008916',162,'ThreeHarvey’,1)`
+
+The call to the method `set_background_priors` requires 5 input parameters, namely the catalog ID and star ID, a guess for nuMax (in microHz), the name of the background model for which the priors are desired (among those provided in the Background code package), and an integer specifying the name of the subfolder where we want to store the results from the fit.
+
+This tutorial will generate a new background_hyperParameters_01.txt file inside the star folder `Background/results/KIC012008916/`, as well as the required configuring files for DIAMONDS (i.e. NSMC_configuringParameters.txt, Xmeans_configuringParameters.txt, and NyquistFrequency.txt). It will also create the entire output star folder if none is present. You will be able to run the corresponding fit going to `Background/build/` and executing the command line `./background KIC 012008916 01 ThreeHarvey background_hyperParameters 0`. All the results from the fit will be stored in the folder `Background/results/KIC012008916/01/`.
