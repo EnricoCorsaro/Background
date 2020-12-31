@@ -28,8 +28,11 @@ This tutorial allows you to generate all the required files for running a new ba
 2. Make sure you have the datafile of the star you want to analyze already placed inside the folder `Background/data`, having the same format of the one used in the first tutorial. To illustrate this tutorial we consider the star KIC 12008916
 3. Go to `Background/results/python` and open a python prompt (e.g. IPython)
 4. In the python prompt execute the commands
-	- `from set_background_priors import *`
-	- `set_background_priors('KIC','012008916',162,'ThreeHarvey’,1)`
+
+```python
+from set_background_priors import *
+set_background_priors('KIC','012008916',162,'ThreeHarvey’,1)
+```
 
 The call to the method `set_background_priors` requires 5 input parameters, namely the catalog ID and star ID, a guess for nuMax (in microHz), the name of the background model for which the priors are desired (among those provided in the Background code package), and an integer specifying the name of the subfolder where we want to store the results from the fit.
 
