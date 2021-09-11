@@ -8,7 +8,7 @@ The figure below provides an example of the resulting fit (in red) to this star 
 
 ![Background fit](https://raw.githubusercontent.com/EnricoCorsaro/Background/master/tutorials/KIC012008916_Background_Plot.png)
 
-To run the tutorial follow the procedure:
+To run the tutorial follow the procedure (if you have installed the Background code using the install.sh script, then go directly to step # 6):
 
 1. Move the file `KIC012008916/localPath.txt` into `Background/build/`
 2. Edit the path inside `localPath.txt` to match your local working path
@@ -20,9 +20,8 @@ To run the tutorial follow the procedure:
 ```bash
 ./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0
 ```
-8. Once the computation is completed, you can plot the results with Python by using the suite provided in the file `background.py` of the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background. 
 
-Once the fit is completed, for producing the actual plot of the background fit follow the guidelines below:
+Once the computation is completed, you can plot the results with Python by using the suite provided in the file `background.py` of the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background. For producing the actual plot of the background fit follow the guidelines below:
 1. Move the file `Background/tutorials/background.py` into `Background/results/python/` (create this folder if you don’t have one already)
 2. Go to `Background/results/python` and open a python prompt (e.g. IPython)
 3. In the python prompt execute the commands
@@ -31,10 +30,9 @@ Once the fit is completed, for producing the actual plot of the background fit f
 from background import *
 background_plot('KIC','012008916','00')
 ```
-Note that the routine automatically recognizes what type of background model was fitted by the Background code, so that the user has not to take care of specifying the name of the model as input. If you also want to plot the Marginal Probability Distributions (MPD) for each free parameter (see figure below) then from the same python prompt execute the commands
+Note that the routine automatically recognizes what type of background model was fitted by the Background code, so that the user has not to take care of specifying the name of the model as input. If you also want to plot the Marginal Probability Distributions (MPD) for each free parameter (see figure below) then from the same python prompt execute the command
 
 ```python
-from background import *
 background_mpd('KIC','012008916','00')
 ```
 
@@ -64,11 +62,11 @@ All the results from the fit will be stored in the folder `Background/results/KI
 
 # Tutorial for correcting the uniform prior boundaries in case of bad fits or incomplete executions
 
-When a fit is not performed correctly the background fit level will not match the smoothed power spectrum (black line in the background plot figure). Most likely the cause of this result relies on our choice of the prior boundaries, which could be wrong for at least one of the free parameters. In more severe cases, the Background code is not even able to converge to a solution, so that one cannot check the output plot of the fit. This produces a "segmentation fault" or "assertion failed" error taking place in Results.cpp of the DIAMONDS code. If this happens, the marginal distributions of the corresponding parameters cannot be computed and the process stops without generating the parameter summary file that contains all the estimates (in your case background_parameterSummary.txt will not be present).
+When a fit is not performed correctly the background fit level will not match the smoothed power spectrum (black line in the background plot figure). Most likely the cause of this result relies on our choice of the prior boundaries, which could be wrong for at least one of the free parameters. In more severe cases, the Background code is not even able to converge to a solution, so that one cannot check the output plot of the fit. This produces a "segmentation fault" or "assertion failed" error taking place in Results.cpp of the DIAMONDS code. If this happens, the marginal distributions of the corresponding parameters cannot be computed and the process stops without generating the parameter summary file that contains all the estimates (the `background_parameterSummary.txt` file will not be present).
 
-A good practice in this case is to always plot the sampling evolution of all the free parameters (all the files of the type `background_parameterXXX.txt`). This will be available even if the computation stops with failures. Each of these files contains one column, which has the value of the parameter at each nested iteration (from the first line, corresponding to iteration 0, to the last line corresponding to the last iteration). As you approach to the end of the nested sampling process, a good sampling evolution (resulting in a good fit) should in principle converge to a specific region well within the prior range.
+A good practice in this case is to always plot the sampling evolution of all the free parameters (all the files of the type `background_parameterXXX.txt`). These files will be available even if the computation stops with failures. Each of these files contains one column, which has the value of the parameter at each nested iteration (from the first line, corresponding to iteration 0, to the last line corresponding to the last iteration). As you approach to the end of the nested sampling process, a good sampling evolution (resulting in a good fit) should in principle converge to a specific region well within the prior range.
 
-In this tutorial we show how to intervene in such situations and therefore how to properly correct our prior boundaries in order to repeat the fit. To run the tutorial make sure you have run the first tutorial once at least, so that the output folder of the Background code contains the results of the fit. Then, follow the steps below.
+In this tutorial we show how to intervene in such situations and therefore how to properly correct our prior boundaries in order to repeat the fit. To run the tutorial make sure you have run the first tutorial at least once, so that the output folder of the Background code contains the results of the fit. Then, follow the steps below.
 
 1. Go to `Background/results/python` and open a python prompt (e.g. IPython)
 2. In the python prompt execute the commands
@@ -81,10 +79,14 @@ parameter_evolution('KIC','012008916','00')
 The routine will generate a plot like then one shown in the figure below. This is the sampling evolution within the nested sampling process for each of the free parameters of the fit (here numbered from 0 up to the last one, and listed in the same order they are defined in both the prior list file and in the model function). This plot can be generated independently of whether a fit has been produced or not, i.e. the sampling evolution can be inspected even if the fit has failed. The y-axis of each sub-plot indicates the prior range adopted for the corresponding free parameter.
 ![Background MPD](https://raw.githubusercontent.com/EnricoCorsaro/Background/master/tutorials/KIC012008916_Parameter_Evolution.png)
 
-This is an example of a good convergence for all the free parameters. When a bad convergence is present, instead, there can be be one or more free parameters evolving toward the boundary of the prior range, or one or more free parameters that follow an unclear evolution path with multiple outcomes. Concerning the first case of the parameters evolving toward the prior boundaries, this implies that the prior range is not adequate for allowing the parameter to evolve to a final solution. The prior ranges of these parameters must then be corrected to allow more freedom in the parameter evolution. Concerning the second case, the ill-defined parameters (those that appear to follow multiple paths during the evolution) do normally fix up alone when you correct the priors for those parameters that evolve toward the prior edges, so we suggest not to take action on them before repeating the fit. This is generally caused by a bad convergence of the whole fitting process, which does not allow some of the parameters to have a clear evolution.
+This figure shows an example of a good convergence for all the free parameters. When a bad convergence is present, instead, there can be be one or more free parameters evolving toward the boundary of the prior range, or one or more free parameters that follow an unclear evolution path with multiple outcomes. Concerning the first case of the parameters evolving toward the prior boundaries, this implies that the prior range is not adequate for allowing the parameter to evolve to a final solution. The prior ranges of these parameters must then be corrected to allow more freedom in the parameter evolution. Concerning the second case, the ill-defined parameters (those that appear to follow multiple paths during the evolution) do normally fix up alone when you correct the priors for those parameters that evolve toward the prior edges, so we suggest not to take action on them before repeating the fit. This is generally caused by a bad convergence of the whole fitting process, which does not allow some of the parameters to have a clear evolution.
 
-Once you have identified the "faulty" priors, the second aspect to consider is by how much the priors should be changed. This could be somewhat difficult to grasp, especially if you are not familiar with this type of fits. For this purpose one can adopt a simple method that can be effective. Take the sampling evolution of the parameter whose prior has to be corrected and compute a simple average and standard deviation out of its sampling. Then correct the prior range by building it as centered around the parameter average and with an extent proportional to the obtained standard deviation, e.g. 3 times the standard deviation on each side of the parameter average (this is generally well enough). 
+Once you have identified the "faulty" priors, the second aspect to consider is by how much the priors should be changed. This could be somewhat difficult to grasp, especially if you are not familiar with this type of fits. For this purpose one can adopt a simple method that can be effective. Take the sampling evolution of the parameter whose prior has to be corrected and compute a simple average and standard deviation out of its sampling. Then correct the prior range by building it as centered around the parameter average and with an extent proportional to the obtained standard deviation, e.g. 3 times the standard deviation on each side of the parameter average (this is generally well enough). For inspecting the parameter evolution of an individual parameter, e.g. 000, the user can exploit an additional method provided in the `background.py` suite through the command
+
+```python
+single_parameter_evolution('KIC','012008916','00',000)
+```
 
 When the priors are corrected within the `background_hyperParameters_XX.txt` file, the fit can be repeated. The whole process can be repeated if you still get an error at the end of the computation. All the faulty priors should be fixed before repeating the whole fit.
 
-Note that when using the `set_background_priors` method presented in the previous tutorial is that most often, the parameters that can yield an error at the end of the sampling process are the free parameters 001 and 002, i.e. the amplitude and characteristic frequency of the Harvey-like profile having the lowest frequency. This is because this profile is generally associated to some long-trend variation in the photometric signal, which arises from different contributions such as activity, rotational modulation, super-granulation and instrumental effects, that are difficult to be identified and modeled in a proper way. 
+**NOTE**: when using the `set_background_priors` method presented in the previous tutorial, most often the parameters that can yield an error at the end of the sampling process are the free parameters 001 and 002, i.e. the amplitude and characteristic frequency of the Harvey-like profile having the lowest frequency (assuming that the background model is incorporating this component). This is because this profile is generally associated to some long-trend variation in the photometric signal, which arises from different contributions such as activity, rotational modulation, super-granulation and instrumental effects, that are difficult to be identified and modeled in a proper way. 
