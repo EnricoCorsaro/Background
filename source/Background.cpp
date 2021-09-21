@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
 
     // Check number of arguments for main function
     
-    if (argc != 7)
+    if (argc != 8)
     {
-        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <input prior base filename> <PCA flag> " << endl;
+        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <input prior base filename> <input threshold frequency (muHz)> <PCA flag> " << endl;
         exit(EXIT_FAILURE);
     }
     
@@ -63,11 +63,14 @@ int main(int argc, char *argv[])
     string runNumber(argv[3]);
     string backgroundModelName(argv[4]);
     string inputPriorBaseName(argv[5]); 
-    string inputPCAflag(argv[6]);
+    string inputThresholdFrequency(argv[6]);
+    string inputPCAflag(argv[7]);
+    double thresholdFrequency = stod(inputThresholdFrequency);
     int PCAflag = stoi(inputPCAflag);
 
 
     // Read the local path for the working session from an input ASCII file
+
     ifstream inputFile;
     File::openInputFile(inputFile, "localPath.txt");
     File::sniffFile(inputFile, Nrows, Ncols);
@@ -77,6 +80,7 @@ int main(int argc, char *argv[])
 
     
     // Set up some string paths used in the computation
+
     string baseInputDirName = myLocalPath[0] + "data/";
     string inputFileName = baseInputDirName + CatalogID + StarID + ".txt";
     string outputDirName = myLocalPath[0] + "results/" + CatalogID + StarID + "/";
@@ -89,6 +93,7 @@ int main(int argc, char *argv[])
 
 
     // Read the input dataset
+
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Nrows, Ncols);
     data = File::arrayXXdFromFile(inputFile, Nrows, Ncols);
@@ -96,9 +101,37 @@ int main(int argc, char *argv[])
 
    
     // Create arrays for each data type
+
     ArrayXd covariates = data.col(0);
     ArrayXd observations = data.col(1); 
-   
+ 
+
+    // Trim input dataset in the given frequency range
+
+    if (thresholdFrequency > covariates.minCoeff())
+    {
+        // Activate the trimming only if a meaningful lower threshold frequency is supplied
+
+        double lowerFrequency = thresholdFrequency;
+        double upperFrequency = covariates.maxCoeff();
+    
+        vector<int> trimIndices = Functions::findArrayIndicesWithinBoundaries(covariates, lowerFrequency, upperFrequency);
+        int Nbins = trimIndices.size();
+        ArrayXd trimmedArray(Nbins);
+            
+        trimmedArray = covariates.segment(trimIndices[0],Nbins);
+        covariates.resize(Nbins);
+        covariates = trimmedArray;
+        trimmedArray = observations.segment(trimIndices[0],Nbins);
+        observations.resize(Nbins);
+        observations = trimmedArray;
+    }
+
+    cerr << "------------------------------------------------------- " << endl;
+    cerr << " Frequency range: [" << setprecision(4) << covariates.minCoeff() << ", " 
+        << covariates.maxCoeff() << "] muHz" << endl;
+    cerr << "------------------------------------------------------- " << endl;
+    cerr << endl; 
 
     // -------------------------------------------------------
     // ----- First step. Set up all prior distributions -----
@@ -112,14 +145,6 @@ int main(int argc, char *argv[])
     File::openInputFile(inputFile, inputFileName);
     File::sniffFile(inputFile, Ndimensions, Ncols);
     
-    /*
-    if ((Ndimensions != 12.0) && (Ndimensions != 10.0))            // Colored-noise component included or excluded
-    {
-        cerr << "Wrong number of input prior hyper-parameters for background model." << endl;
-        exit(EXIT_FAILURE);
-    }
-    */
-    
     if (Ncols != 2)
     {
         cerr << " Wrong number of input prior boundaries." << endl;
@@ -127,10 +152,10 @@ int main(int argc, char *argv[])
     }
     else
     {
-        cerr << "-------------------------------------------------- " << endl;
+        cerr << "------------------------------------------------------- " << endl;
         cerr << " Reading prior file " + inputPriorBaseName + "_" + runNumber + ".txt" << endl;
-        cerr << "-------------------------------------------------- " << endl;
-        cerr << " " << endl;
+        cerr << "------------------------------------------------------- " << endl;
+        cerr << endl;
     }
     
     ArrayXXd hyperParameters;
