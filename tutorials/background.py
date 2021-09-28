@@ -86,6 +86,13 @@ def get_working_paths(catalog_id,star_id,subdir):
     data_dir = local_path + 'data/' 
     star_dir = local_path + 'results/' + catalog_id + star_id + '/'
     results_dir = star_dir + subdir + '/'
+
+    if not os.path.isdir(star_dir):
+        os.mkdir(star_dir)
+
+    if not os.path.isdir(results_dir):
+        os.mkdir(results_dir)
+
     return data_dir,star_dir,results_dir
 
 def background_plot(catalog_id,star_id,subdir,params=None):
@@ -132,7 +139,7 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     numax = params[-2]
     dnu = 0.267*numax**0.760
     freqbin = freq[1]-freq[0]
-    width = dnu/2./freqbin
+    width = dnu/freqbin
     win_len=int(width)
     if win_len % 2 == 0: win_len += 1
     psd_smth = smooth(psd,window_len=win_len,window='flat')
@@ -141,18 +148,19 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     # Plot the region of PSD containing the fitted background components
     # -------------------------------------------------------------------------------------------------------
     pdf = PdfPages(star_dir + catalog_id + star_id + '_' + subdir + '_Background.pdf')
+    b1,b2,h_long,h_gran1,h_gran2,g,w,h_color=background_function(params,freq,model_name)
+    
     fig = plt.figure(1,figsize=(10,4))
     plt.clf()
     ax1 = plt.subplot(1,1,1)
     plt.loglog(freq,psd,color='grey')
-    plt.xlim(0.1, np.max(freq))
-    plt.ylim(1,np.max(psd))
+    plt.xlim(np.min(freq), np.max(freq))
+    plt.ylim(np.min(w)*0.1,np.max(psd))
     plt.xlabel(r'Frequency [$\mu$Hz]')
     plt.ylabel(r'PSD [ppm$^2$/$\mu$Hz]')
     ax1.tick_params(width=1.5,length=8,top=True,right=True)
     ax1.tick_params(which='minor',length=6,top=True,right=True)
     plt.plot(freq,psd_smth,'k',lw=2)
-    b1,b2,h_long,h_gran1,h_gran2,g,w,h_color=background_function(params,freq,model_name)
     plt.plot(freq,g,'m-.',lw=2)
     plt.plot(freq,h_color,'y-.',lw=2)
     plt.plot(freq,h_long,'b-.',lw=2)
@@ -248,7 +256,7 @@ def background_mpd(catalog_id,star_id,subdir):
     fig = plt.figure(2,figsize=(11,7))
     plt.clf()
 
-    for parnumb in range(0,n_param-1):
+    for parnumb in range(0,n_param):
         if parnumb < 10:
             parstr = '0' + str(parnumb)
         else:
@@ -319,7 +327,7 @@ def background_parhist(catalog_id,star_id,subdir):
     fig = plt.figure(3,figsize=(11,7))
     plt.clf()
 
-    for parnumb in range(0,nparam-1):
+    for parnumb in range(0,nparam):
         if parnumb < 10:
             parstr = '0' + str(parnumb)
         else:
@@ -564,12 +572,15 @@ def parameter_evolution(catalog_id,star_id,subdir):
     data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
     filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
     nparam = filename_summary.size
-    
+   
+    print(nparam)
+    print(results_dir)
+
     plt.ion()
     fig = plt.figure(5,figsize=(11,7))
     plt.clf()
 
-    for parnumb in range(0,nparam-1):
+    for parnumb in range(0,nparam):
         if parnumb < 10:
             parstr = '0' + str(parnumb)
         else:
@@ -616,8 +627,13 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     print(' ---------------------------------------------- ')
     print(' Creating Background priors for ' + catalog_id + star_id)
     print(' ---------------------------------------------- ')
-    
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,'0')
+   
+    if dir_flag < 10:
+        subdir_str = '0' + str(dir_flag)
+    else:
+        subdir_str = str(dir_flag)
+
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir_str)
     freq,psd = get_background_data(catalog_id,star_id,data_dir)
 
     numax_range = numax*0.1
@@ -625,7 +641,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     upper_numax = numax + numax_range
     dnu = 0.267*numax**0.760
     sigma = 2.0 * dnu
-    sigma_range = sigma*0.4
+    sigma_range = sigma*0.2
     lower_sigma = sigma - sigma_range*1.5
     upper_sigma = sigma + sigma_range
 
@@ -740,7 +756,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     
     if model_name == 'OneHarveyNoGaussian':
         lower_nu_g1 = np.min(freq)
-        boundaries = [lower_white_noise, upper_white_noise, lower_amp_g1, upper_amp_g1, lower_nu_g1, upper_nu_g1]
+        boundaries = [lower_white_noise, upper_white_noise, lower_amp_g2, upper_amp_g2, lower_nu_g2, upper_nu_g2]
     
     if model_name == 'TwoHarveyNoGaussian':
         lower_nu_g1 = np.min(freq)
@@ -756,13 +772,13 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     
     if model_name == 'OneHarvey':
         lower_nu_g1 = np.min(freq)
-        boundaries = [lower_white_noise, upper_white_noise, lower_amp_g1, upper_amp_g1, lower_nu_g1, upper_nu_g1, 
+        boundaries = [lower_white_noise, upper_white_noise, lower_amp_g2, upper_amp_g2, lower_nu_g2, upper_nu_g2, 
                         lower_height, upper_height, lower_numax, upper_numax, lower_sigma, upper_sigma]
     
     if model_name == 'OneHarveyColor':
         lower_nu_g1 = np.min(freq)
         boundaries = [lower_white_noise, upper_white_noise, lower_amp_color, upper_amp_color, lower_nu_color, upper_nu_color, 
-                        lower_amp_g1, upper_amp_g1, lower_nu_g1, upper_nu_g1, 
+                        lower_amp_g2, upper_amp_g2, lower_nu_g2, upper_nu_g2, 
                         lower_height, upper_height, lower_numax, upper_numax, lower_sigma, upper_sigma]
     
     if model_name == 'TwoHarvey':
@@ -789,14 +805,6 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     # Write an ASCII file for the priors
     
-    if dir_flag < 10:
-        subdir_str = '0' + str(dir_flag)
-    else:
-        subdir_str = str(dir_flag)
-
-    if not os.path.isdir(star_dir + subdir_str):
-        os.mkdir(star_dir + subdir_str)
-
     filename = star_dir + 'background_hyperParameters_' + subdir_str + '.txt'
 
     header="""
@@ -823,8 +831,6 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:
         f.write('{}'.format(np.max(freq)))
-
-    #np.savetxt(filename, np.array(np.max(freq)),fmt='%.6f')
 
 
     # Write a file with the parameters for the X means clustering algorithm.
