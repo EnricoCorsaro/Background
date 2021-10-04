@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
     if (thresholdFrequency > covariates.minCoeff())
     {
-        // Activate the trimming only if a meaningful lower threshold frequency is supplied
+        // Activate the trimming only if a meaningful lower frequency threshold is supplied
 
         double lowerFrequency = thresholdFrequency;
         double upperFrequency = covariates.maxCoeff();
@@ -125,6 +125,13 @@ int main(int argc, char *argv[])
         trimmedArray = observations.segment(trimIndices[0],Nbins);
         observations.resize(Nbins);
         observations = trimmedArray;
+    }
+    else
+    {
+        // Set input threshold frequency to 0 in case it is not larger than the minimum frequency of the dataset.
+        // This implies that it is not used within the computation.
+
+        thresholdFrequency = 0.0;
     }
 
     cerr << "------------------------------------------------------- " << endl;
@@ -398,11 +405,13 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << initialEnlargementFraction << endl;
     nestedSampler.outputFile << shrinkingRate << endl;
     nestedSampler.outputFile << "# Other information on the run" << endl;
-    nestedSampler.outputFile << "# Row #1: Local working path used" << endl;
-    nestedSampler.outputFile << "# Row #2: Catalog and Star ID" << endl;
-    nestedSampler.outputFile << "# Row #3: Run Number" << endl;
-    nestedSampler.outputFile << "# Row #4: Background model adopted" << endl;
-    nestedSampler.outputFile << "# Row #5: PCA activated (1 = yes / 0 = no)" << endl;
+    nestedSampler.outputFile << "# Row #1: Low-Frequency threshold (0 if not used)" << endl;
+    nestedSampler.outputFile << "# Row #2: Local working path used" << endl;
+    nestedSampler.outputFile << "# Row #3: Catalog and Star ID" << endl;
+    nestedSampler.outputFile << "# Row #4: Run Number" << endl;
+    nestedSampler.outputFile << "# Row #5: Background model adopted" << endl;
+    nestedSampler.outputFile << "# Row #6: PCA activated (1 = yes / 0 = no)" << endl;
+    nestedSampler.outputFile << thresholdFrequency << endl;
     nestedSampler.outputFile << myLocalPath[0] << endl;
     nestedSampler.outputFile << CatalogID + StarID << endl;
     nestedSampler.outputFile << runNumber << endl;
