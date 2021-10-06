@@ -381,12 +381,12 @@ def background_parhist(catalog_id,star_id,subdir):
             parstr = str(parnumb)
 
         name = prefix + 'parameter0'
-        par = np.loadtxt(result_dir + name + parstr + '.txt')
+        par = np.loadtxt(results_dir + name + parstr + '.txt')
         plt.subplot(4,3,parnumb+1)
-        plt.hist(par)
+        plt.hist(par,bins='auto')
         plt.title(plot_labels[parnumb],fontsize='small')
+    
     plt.subplots_adjust(hspace=.5,wspace=.35,left=.08,bottom=.05,top=.93,right=.98)
-    plt.text(.5,.07,'%s%s'% (catalog_id,star_id) ,size='large', transform=ax.transAxes)
     return
 
 def background_function(params,freq,model_name,star_dir):
@@ -464,9 +464,7 @@ def background_function(params,freq,model_name,star_dir):
         amp_gran_original,freq_gran_original = 0,1
 
     zeta = 2.0*np.sqrt(2.0)/pi
-
     nyq = np.loadtxt(star_dir + 'NyquistFrequency.txt')
-    
     r = (np.sin(pi/2. * freq/nyq) / (pi/2. * freq/nyq))**2
     
     h_long = zeta * r * (amp_long**2/freq_long) / (1 + (freq/freq_long)**4)
@@ -697,7 +695,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     dnu = 0.267*numax**0.760
     sigma = 2.0 * dnu
     lower_sigma = sigma*0.3
-    upper_sigma = sigma*1.3
+    upper_sigma = sigma*1.7
 
     freqbin = freq[1] - freq[0]
     smth_bins = int(dnu/freqbin)
