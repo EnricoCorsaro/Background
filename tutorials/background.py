@@ -148,8 +148,8 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     # Plot the region of PSD containing the fitted background components
     # -------------------------------------------------------------------------------------------------------
     pdf = PdfPages(star_dir + catalog_id + star_id + '_' + subdir + '_Background.pdf')
-    b1,b2,h_long,h_gran1,h_gran2,g,w,h_color=background_function(params,freq,model_name)
-    
+    b1,b2,h_long,h_gran1,h_gran2,h_gran_original,g,w,h_color=background_function(params,freq,model_name,star_dir)
+   
     fig = plt.figure(1,figsize=(10,4))
     plt.clf()
     ax1 = plt.subplot(1,1,1)
@@ -166,6 +166,7 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     plt.plot(freq,h_long,'b-.',lw=2)
     plt.plot(freq,h_gran1,'b-.',lw=2)
     plt.plot(freq,h_gran2,'b-.',lw=2)
+    plt.plot(freq,h_gran_original,'b-.',lw=2)
     plt.plot(freq,w,'y-.',lw=2)
     plt.plot(freq,b1,'r-',lw=3)
     plt.plot(freq,b2,'g--',lw=2)
@@ -214,6 +215,8 @@ def background_mpd(catalog_id,star_id,subdir):
                    r'$\nu_{gran,1}$ [$\mu$Hz]',
                    r'$\sigma_{gran,2}$ [ppm]',
                    r'$\nu_{gran,2}$ [$\mu$Hz]',
+                   r'$\sigma_{gran}^{org}$ [ppm]',
+                   r'$\nu_{gran}^{org}$ [$\mu$Hz]',
                    r'H$_{osc}$ [ppm$^2$/$\mu$Hz]',
                    r'$\nu_{max} [$\mu$Hz]$',
                    r'$\sigma_{env}$ [$\mu$Hz]']
@@ -227,14 +230,17 @@ def background_mpd(catalog_id,star_id,subdir):
     if model_name == 'Flat':
         plot_labels = [plot_labels[0]] + plot_labels[-3:]
 
+    if model_name == 'Original':
+        plot_labels = [plot_labels[0]] + plot_labels[9:11] + plot_labels[-3:]
+
     if model_name == 'OneHarveyNoGaussian':
-        plot_labels = [plot_labels[0]] + plot_labels[5:7]
+        plot_labels = [plot_labels[0]] + plot_labels[7:9]
 
     if model_name == 'OneHarvey':
-        plot_labels = [plot_labels[0]] + plot_labels[5:7] + plot_labels[-3:]
+        plot_labels = [plot_labels[0]] + plot_labels[7:9] + plot_labels[-3:]
 
     if model_name == 'OneHarveyColor':
-        plot_labels = plot_labels[0:3] + plot_labels[5:7] + plot_labels[-3:]
+        plot_labels = plot_labels[0:3] + plot_labels[7:9] + plot_labels[-3:]
 
     if model_name == 'TwoHarveyNoGaussian':
         plot_labels = [plot_labels[0]] + plot_labels[5:9]
@@ -243,13 +249,16 @@ def background_mpd(catalog_id,star_id,subdir):
         plot_labels = [plot_labels[0]] + plot_labels[5:]
     
     if model_name == 'TwoHarveyColor':
-        plot_labels = plot_labels[0:3] + plot_labels[5:7] + plot_labels[-3:]
+        plot_labels = plot_labels[0:3] + plot_labels[5:9] + plot_labels[-3:]
     
     if model_name == 'ThreeHarveyNoGaussian':
         plot_labels = [plot_labels[0]] + plot_labels[5:9]
     
     if model_name == 'ThreeHarvey':
-        plot_labels = [plot_labels[0]] + plot_labels[3:]
+        plot_labels = [plot_labels[0]] + plot_labels[3:9] + plot_labels[-3:]
+
+    if model_name == 'ThreeHarveyColor':
+        plot_labels = [plot_labels[0:9]] + plot_labels[-3:] 
     
     pdf = PdfPages(star_dir + catalog_id + star_id + '_' + subdir + '_MarginalDistributions.pdf')
     plt.ion()
@@ -319,9 +328,47 @@ def background_parhist(catalog_id,star_id,subdir):
                    r'$\nu_{gran,1}$ [$\mu$Hz]',
                    r'$\sigma_{gran,2}$ [ppm]',
                    r'$\nu_{gran,2}$ [$\mu$Hz]',
+                   r'$\sigma_{gran}^{org}$ [ppm]',
+                   r'$\nu_{gran}^{org}$ [$\mu$Hz]',
                    r'H$_{osc}$ [ppm$^2$/$\mu$Hz]',
                    r'$\nu_{max} [$\mu$Hz]$',
                    r'$\sigma_{env}$ [$\mu$Hz]']
+
+    if model_name == 'FlatNoGaussian':
+        plot_labels = [plot_labels[0]]
+
+    if model_name == 'Flat':
+        plot_labels = [plot_labels[0]] + plot_labels[-3:]
+
+    if model_name == 'Original':
+        plot_labels = [plot_labels[0]] + plot_labels[9:11] + plot_labels[-3:]
+
+    if model_name == 'OneHarveyNoGaussian':
+        plot_labels = [plot_labels[0]] + plot_labels[7:9]
+
+    if model_name == 'OneHarvey':
+        plot_labels = [plot_labels[0]] + plot_labels[7:9] + plot_labels[-3:]
+
+    if model_name == 'OneHarveyColor':
+        plot_labels = plot_labels[0:3] + plot_labels[7:9] + plot_labels[-3:]
+
+    if model_name == 'TwoHarveyNoGaussian':
+        plot_labels = [plot_labels[0]] + plot_labels[5:9]
+    
+    if model_name == 'TwoHarvey':
+        plot_labels = [plot_labels[0]] + plot_labels[5:]
+    
+    if model_name == 'TwoHarveyColor':
+        plot_labels = plot_labels[0:3] + plot_labels[5:9] + plot_labels[-3:]
+    
+    if model_name == 'ThreeHarveyNoGaussian':
+        plot_labels = [plot_labels[0]] + plot_labels[5:9]
+    
+    if model_name == 'ThreeHarvey':
+        plot_labels = [plot_labels[0]] + plot_labels[3:9] + plot_labels[-3:]
+
+    if model_name == 'ThreeHarveyColor':
+        plot_labels = [plot_labels[0:9]] + plot_labels[-3:]
 
     plt.ion()
     fig = plt.figure(3,figsize=(11,7))
@@ -342,7 +389,7 @@ def background_parhist(catalog_id,star_id,subdir):
     plt.text(.5,.07,'%s%s'% (catalog_id,star_id) ,size='large', transform=ax.transAxes)
     return
 
-def background_function(params,freq,model_name):
+def background_function(params,freq,model_name,star_dir):
     """
     Authors: Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -362,69 +409,80 @@ def background_function(params,freq,model_name):
     :param model_name: the name of the background model to generate the predictions
     :type model_name: str
 
+    :param stellar_directory: the path of the folder containing the configuring parameters and results of the given star.
+    This is required in order to retrieve the actual Nyquist frequency used within the computation
+    :type stellar_directory: str
+
     """
 
     if model_name == 'FlatNoGaussian':
         w = params
-        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,1
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,0,1,1
 
     if model_name == 'Flat':
         w,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_color,freq_color = 0,1,0,1,0,1,0,1
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1,0,1
 
     if model_name == 'OneHarveyNoGaussian':
         w,amp_gran1,freq_gran1 = params
-        amp_long,freq_long,amp_gran2,freq_gran2,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,1
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,1
+
+    if model_name == 'Original':
+        w,amp_gran_original,freq_gran_original,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_color,freq_color = 0,1,0,1,0,1,0,1
 
     if model_name == 'OneHarvey':
         w,amp_gran1,freq_gran1,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran2,freq_gran2,amp_color,freq_color = 0,1,0,1,0,1
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1
 
     if model_name == 'OneHarveyColor':
         w,amp_color,freq_color,amp_gran1,freq_gran1,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran2,freq_gran2 = 0,1,0,1
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original = 0,1,0,1,0,1
 
     if model_name == 'TwoHarveyNoGaussian':
         w,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
-        amp_long,freq_long,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,1
+        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,1
 
     if model_name == 'TwoHarvey':
         w,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_long,freq_long,amp_color,freq_color = 0,1,0,1
+        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1
 
     if model_name == 'TwoHarveyColor':
         w,amp_color,freq_color,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_long,freq_long = 0,1
+        amp_long,freq_long,amp_gran_original,freq_gran_original = 0,1,0,1
 
     if model_name == 'ThreeHarveyNoGaussian':
         w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
-        amp_color,freq_color,hg,numax,sigma = 0,1,0,1,1
+        amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,1
 
     if model_name == 'ThreeHarvey':
         w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_color,freq_color = 0,1
+        amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1
    
     if model_name == 'ThreeHarveyColor':
         w,amp_color,freq_color,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params    
+        amp_gran_original,freq_gran_original = 0,1
 
     zeta = 2.0*np.sqrt(2.0)/pi
-    nyq = 283.2116656017908
+
+    nyq = np.loadtxt(star_dir + 'NyquistFrequency.txt')
     
     r = (np.sin(pi/2. * freq/nyq) / (pi/2. * freq/nyq))**2
     
     h_long = zeta * r * (amp_long**2/freq_long) / (1 + (freq/freq_long)**4)
     h_gran1 = zeta * r *(amp_gran1**2/freq_gran1) / (1 + (freq/freq_gran1)**4)
     h_gran2 = zeta * r *(amp_gran2**2/freq_gran2) / (1 + (freq/freq_gran2)**4)
+    h_gran_original = 4 * r *(amp_gran_original**2/freq_gran_original) / (1 + (2*pi*freq/freq_gran_original)**2)
     h_color = 2*pi*amp_color*amp_color/(freq_color*(1+(freq/freq_color)**2)) 
     
     g = r * hg * np.exp(-(numax-freq)**2/(2.*sigma**2))
     
-    b1 = h_long + h_gran1 + h_gran2 + w + h_color
-    b2 = h_long + h_gran1 + h_gran2 + g + w + h_color
+    b1 = h_long + h_gran1 + h_gran2 + h_gran_original + w + h_color
+    b2 = h_long + h_gran1 + h_gran2 + h_gran_original + g + w + h_color
    
     w = np.zeros(freq.size) + w 
 
-    return b1,b2,h_long,h_gran1,h_gran2,g,w,h_color
+    return b1,b2,h_long,h_gran1,h_gran2,h_gran_original,g,w,h_color
 
 def get_background_params(catalog_id,star_id,results_dir):
     """
@@ -573,9 +631,6 @@ def parameter_evolution(catalog_id,star_id,subdir):
     filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
     nparam = filename_summary.size
    
-    print(nparam)
-    print(results_dir)
-
     plt.ion()
     fig = plt.figure(5,figsize=(11,7))
     plt.clf()
@@ -641,9 +696,8 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     upper_numax = numax + numax_range
     dnu = 0.267*numax**0.760
     sigma = 2.0 * dnu
-    sigma_range = sigma*0.2
-    lower_sigma = sigma - sigma_range*1.5
-    upper_sigma = sigma + sigma_range
+    lower_sigma = sigma*0.3
+    upper_sigma = sigma*1.3
 
     freqbin = freq[1] - freq[0]
     smth_bins = int(dnu/freqbin)
@@ -657,10 +711,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     # Define the priors for the white noise
     
-    if np.max(freq) < 300 & numax > 200:
-        tmp_w = np.where(freq > 200.)[0]
-    else: 
-        tmp_w = np.where(freq > numax+2*dnu)[0]
+    tmp_w = np.where(freq > numax+2*dnu)[0]
     
     if len(tmp_w) != 0:
         white_noise_array = psd[tmp_w]
@@ -677,7 +728,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     nu_g1 = 0.317 * numax**0.970
     lower_nu_g1 = 0.6 * nu_g1 
-    upper_nu_g1 = 1.4 * nu_g1
+    upper_nu_g1 = 1.5 * nu_g1
     amp_g1 = 3383 * numax**-0.609
     
     g1_range = nu_g1 * 0.1
@@ -688,7 +739,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     if amp_g1_data > amp_g1:
         amp_g1 = amp_g1_data
     
-    lower_amp_g1 = 0.3 * amp_g1
+    lower_amp_g1 = 0.2 * amp_g1
     upper_amp_g1 = 1.5 * amp_g1 
 
 
@@ -696,11 +747,21 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     nu_g2 = 0.948 * numax**0.992
     lower_nu_g2 = 0.6 * nu_g2 
-    upper_nu_g2 = 1.4 * nu_g2
+    upper_nu_g2 = 1.5 * nu_g2
 
     amp_g2 = 3383 * numax**-0.609
     lower_amp_g2 = 0.2 * amp_g1
     upper_amp_g2 = 1.5 * amp_g1 
+
+    # Define the priors for the granulation in the case of the original formulation (Harvey profile with exponent set to 2)
+
+    nu_g_original = nu_g2
+    lower_nu_g_original = 0.4 * nu_g_original
+    upper_nu_g_original = 1.7 * nu_g_original
+
+    amp_g_original = amp_g2
+    lower_amp_g_original = 0.2 * amp_g_original
+    upper_amp_g_original = 1.7 * amp_g_original
 
 
     # Define the priors for the rotation
@@ -708,7 +769,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     nu_rot = nu_g1/2. 
     lower_nu_rot = np.min(freq)
-    upper_nu_rot = 0.9 * nu_g1
+    upper_nu_rot = 0.99*nu_g1
     
     rot_range = nu_rot * 0.1
     tmp_rot = np.where((freq >= nu_rot - rot_range) & (freq <= nu_rot + rot_range))[0]
@@ -770,6 +831,11 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     if model_name == 'Flat':
         boundaries = [lower_white_noise, upper_white_noise, lower_height, upper_height, lower_numax, upper_numax, lower_sigma, upper_sigma]
     
+    if model_name == 'Original':
+        lower_nu_g1 = np.min(freq)
+        boundaries = [lower_white_noise, upper_white_noise, lower_amp_g_original, upper_amp_g_original, lower_nu_g_original, upper_nu_g_original, 
+                        lower_height, upper_height, lower_numax, upper_numax, lower_sigma, upper_sigma]
+
     if model_name == 'OneHarvey':
         lower_nu_g1 = np.min(freq)
         boundaries = [lower_white_noise, upper_white_noise, lower_amp_g2, upper_amp_g2, lower_nu_g2, upper_nu_g2, 
