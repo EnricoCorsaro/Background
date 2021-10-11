@@ -689,14 +689,17 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir_str)
     freq,psd = get_background_data(catalog_id,star_id,data_dir)
 
-    numax_range = numax*0.1
-    lower_numax = numax - numax_range
-    upper_numax = numax + numax_range
     dnu = 0.267*numax**0.760
-    sigma = 2.0 * dnu
-    lower_sigma = sigma*0.3
-    upper_sigma = sigma*1.7
+    lower_numax = numax - dnu*1.5
+    upper_numax = numax + dnu*1.5
+   
 
+    # Obtain an estimate of the envelope width from its correlation with nuMax
+
+    sigma = np.exp(-1.46182 + 0.877656*np.log(numax))
+    lower_sigma = sigma*0.6
+    upper_sigma = sigma*1.3
+    
     freqbin = freq[1] - freq[0]
     smth_bins = int(dnu/freqbin)
     psd_smth = smooth(psd, window_len=smth_bins, window='flat')
@@ -709,17 +712,28 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
 
     # Define the priors for the white noise
     
-    tmp_w = np.where(freq > numax+2*dnu)[0]
+    tmp_w = np.where(freq > numax+2*sigma)[0]
     
     if len(tmp_w) != 0:
         white_noise_array = psd[tmp_w]
     else:
         tmp_w = np.where(freq > numax)[0]
         white_noise_array = psd[tmp_w]
-    
-    white_noise = np.mean(white_noise_array)
-    lower_white_noise = 0.5 * white_noise 
-    upper_white_noise = 1.50 * white_noise 
+   
+    n_elements_chunk = int(len(white_noise_array)/10.0)
+    w_start = np.mean(white_noise_array[0:n_elements_chunk])
+    w_end = np.mean(white_noise_array[-n_elements_chunk:])
+    delta_w = w_start-w_end
+    white_noise = w_end
+    gradient_w = delta_w/w_end
+    print(' W Gradient (%) = ',gradient_w*100)
+
+    if gradient_w*100 >= 50.:
+        lower_white_noise = white_noise - 0.5 * white_noise
+        upper_white_noise = white_noise + 0.5 * white_noise
+    else:
+        lower_white_noise = white_noise - delta_w
+        upper_white_noise = white_noise + delta_w 
 
 
     # Define the priors for the meso-granulation
