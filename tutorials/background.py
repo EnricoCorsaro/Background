@@ -246,13 +246,13 @@ def background_mpd(catalog_id,star_id,subdir):
         plot_labels = [plot_labels[0]] + plot_labels[5:9]
     
     if model_name == 'TwoHarvey':
-        plot_labels = [plot_labels[0]] + plot_labels[5:]
+        plot_labels = [plot_labels[0]] + plot_labels[5:9] + plot_labels[-3:]
     
     if model_name == 'TwoHarveyColor':
         plot_labels = plot_labels[0:3] + plot_labels[5:9] + plot_labels[-3:]
     
     if model_name == 'ThreeHarveyNoGaussian':
-        plot_labels = [plot_labels[0]] + plot_labels[5:9]
+        plot_labels = [plot_labels[0]] + plot_labels[3:9]
     
     if model_name == 'ThreeHarvey':
         plot_labels = [plot_labels[0]] + plot_labels[3:9] + plot_labels[-3:]
@@ -356,13 +356,13 @@ def background_parhist(catalog_id,star_id,subdir):
         plot_labels = [plot_labels[0]] + plot_labels[5:9]
     
     if model_name == 'TwoHarvey':
-        plot_labels = [plot_labels[0]] + plot_labels[5:]
+        plot_labels = [plot_labels[0]] + plot_labels[5:9] + plot_labels[-3:]
     
     if model_name == 'TwoHarveyColor':
         plot_labels = plot_labels[0:3] + plot_labels[5:9] + plot_labels[-3:]
     
     if model_name == 'ThreeHarveyNoGaussian':
-        plot_labels = [plot_labels[0]] + plot_labels[5:9]
+        plot_labels = [plot_labels[0]] + plot_labels[3:9]
     
     if model_name == 'ThreeHarvey':
         plot_labels = [plot_labels[0]] + plot_labels[3:9] + plot_labels[-3:]
