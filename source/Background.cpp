@@ -86,10 +86,10 @@ int main(int argc, char *argv[])
     string outputDirName = myLocalPath[0] + "results/" + CatalogID + StarID + "/";
     string outputPathPrefix = outputDirName + runNumber + "/background_";
     
-    cerr << "------------------------------------------------ " << endl;
-    cerr << " Background analysis of " + CatalogID + StarID << endl;
-    cerr << "------------------------------------------------ " << endl;
-    cerr << endl; 
+    cout << "------------------------------------------------ " << endl;
+    cout << " Background analysis of " + CatalogID + StarID << endl;
+    cout << "------------------------------------------------ " << endl;
+    cout << endl; 
 
 
     // Read the input dataset
@@ -134,11 +134,11 @@ int main(int argc, char *argv[])
         thresholdFrequency = 0.0;
     }
 
-    cerr << "------------------------------------------------------- " << endl;
-    cerr << " Frequency range: [" << setprecision(4) << covariates.minCoeff() << ", " 
+    cout << "------------------------------------------------------- " << endl;
+    cout << " Frequency range: [" << setprecision(4) << covariates.minCoeff() << ", " 
         << covariates.maxCoeff() << "] muHz" << endl;
-    cerr << "------------------------------------------------------- " << endl;
-    cerr << endl; 
+    cout << "------------------------------------------------------- " << endl;
+    cout << endl; 
 
     // -------------------------------------------------------
     // ----- First step. Set up all prior distributions -----
@@ -156,13 +156,14 @@ int main(int argc, char *argv[])
     {
         cerr << " Wrong number of input prior boundaries." << endl;
         cerr << " Two boundaries are required for uniform priors." << endl;
+        exit(EXIT_FAILURE);
     }
     else
     {
-        cerr << "------------------------------------------------------- " << endl;
-        cerr << " Reading prior file " + inputPriorBaseName + "_" + runNumber + ".txt" << endl;
-        cerr << "------------------------------------------------------- " << endl;
-        cerr << endl;
+        cout << "------------------------------------------------------- " << endl;
+        cout << " Reading prior file " + inputPriorBaseName + "_" + runNumber + ".txt" << endl;
+        cout << "------------------------------------------------------- " << endl;
+        cout << endl;
     }
     
     ArrayXXd hyperParameters;
@@ -435,7 +436,7 @@ int main(int argc, char *argv[])
     bool writeMarginalDistributionToFile = true;
     results.writeParametersSummaryToFile("parameterSummary.txt", credibleLevel, writeMarginalDistributionToFile);
 
-    cerr << "Process #" << runNumber << " has been completed." << endl;
+    cout << "Process # " << runNumber << " has been completed." << endl;
 
     return EXIT_SUCCESS;
 }
