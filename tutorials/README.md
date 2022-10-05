@@ -58,7 +58,7 @@ This tutorial allows you to generate all the required files for running a new ba
 
 ```python
 from background import *
-set_background_priors('KIC','012008916',162,'ThreeHarvey’,1)
+set_background_priors('KIC','012008916',162,'ThreeHarvey',1)
 ```
 
 The call to the method `set_background_priors` requires 5 input parameters, namely the catalog ID and star ID, a guess for nuMax (in microHz), the name of the background model for which the priors are desired (among those provided in the Background code package), and an integer specifying the name of the subfolder where we want to store the results from the fit.

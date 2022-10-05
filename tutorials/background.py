@@ -60,7 +60,7 @@ def smooth(x, window_len=11, window='hanning'):
     
     return y[window_len//2:-window_len//2+1]
 
-def get_working_paths(catalog_id,star_id,subdir):
+def get_working_paths(catalog_id,star_id,subdir,root_path=None):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -82,7 +82,12 @@ def get_working_paths(catalog_id,star_id,subdir):
 
     """
 
-    local_path = str(np.loadtxt('../../build/localPath.txt',dtype='str'))
+    if root_path == None:
+        root_path = '../..'
+        local_path = str(np.loadtxt(root_path + '/build/localPath.txt',dtype='str'))
+    else:
+        local_path = root_path + '/Background/'
+
     data_dir = local_path + 'data/' 
     star_dir = local_path + 'results/' + catalog_id + star_id + '/'
     results_dir = star_dir + subdir + '/'
@@ -95,7 +100,7 @@ def get_working_paths(catalog_id,star_id,subdir):
 
     return data_dir,star_dir,results_dir
 
-def background_plot(catalog_id,star_id,subdir,params=None):
+def background_plot(catalog_id,star_id,subdir,root_path=None,params=None):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -124,7 +129,7 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     mpl.rcParams['xtick.labelsize']='medium'
     mpl.rcParams['ytick.labelsize']='medium'
    
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     freq,psd = get_background_data(catalog_id,star_id,data_dir) 
     model_name = get_background_name(catalog_id,star_id,results_dir)
 
@@ -149,17 +154,18 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     # -------------------------------------------------------------------------------------------------------
     pdf = PdfPages(star_dir + catalog_id + star_id + '_' + subdir + '_Background.pdf')
     b1,b2,h_long,h_gran1,h_gran2,h_gran_original,g,w,h_color=background_function(params,freq,model_name,star_dir)
-   
-    fig = plt.figure(1,figsize=(10,4))
+  
+    plt.ion() 
+    fig = plt.figure(1,figsize=(10,4),linewidth=2.0)
     plt.clf()
     ax1 = plt.subplot(1,1,1)
     plt.loglog(freq,psd,color='grey')
     plt.xlim(np.min(freq), np.max(freq))
     plt.ylim(np.min(w)*0.1,np.max(psd))
-    plt.xlabel(r'Frequency [$\mu$Hz]')
-    plt.ylabel(r'PSD [ppm$^2$/$\mu$Hz]')
-    ax1.tick_params(width=1.5,length=8,top=True,right=True)
-    ax1.tick_params(which='minor',length=6,top=True,right=True)
+    plt.xlabel(r'Frequency [$\mu$Hz]',fontsize='xx-large')
+    plt.ylabel(r'PSD [ppm$^2$/$\mu$Hz]',fontsize='xx-large')
+    ax1.tick_params(width=1.0,length=10,top=True,right=True,labelsize='xx-large')
+    ax1.tick_params(which='minor',width=1.0,length=8,top=True,right=True)
     plt.plot(freq,psd_smth,'k',lw=2)
     plt.plot(freq,g,'m-.',lw=2)
     plt.plot(freq,h_color,'y-.',lw=2)
@@ -172,12 +178,12 @@ def background_plot(catalog_id,star_id,subdir,params=None):
     plt.plot(freq,b2,'g--',lw=2)
     plt.subplots_adjust(left=.12,right=.97,top=.94,bottom=.2)
     
-    plt.text(.1,.075,'%s%s'% (catalog_id,star_id), size='large', transform=ax1.transAxes)
+    plt.text(.1,.075,'%s%s'% (catalog_id,star_id), size='xx-large', transform=ax1.transAxes)
     pdf.savefig()
     pdf.close()
     return
 
-def background_mpd(catalog_id,star_id,subdir):
+def background_mpd(catalog_id,star_id,subdir,root_path=None):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -203,7 +209,7 @@ def background_mpd(catalog_id,star_id,subdir):
     mpl.rcParams['xtick.labelsize']='x-small'
     mpl.rcParams['ytick.labelsize']='x-small'
     
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     model_name = get_background_name(catalog_id,star_id,results_dir)
 
     plot_labels = [r'W [ppm$^2$/$\mu$Hz]',
@@ -289,7 +295,7 @@ def background_mpd(catalog_id,star_id,subdir):
     pdf.close()
     return
 
-def background_parhist(catalog_id,star_id,subdir):
+def background_parhist(catalog_id,star_id,subdir,root_path=None):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -313,7 +319,7 @@ def background_parhist(catalog_id,star_id,subdir):
     mpl.rcParams['xtick.labelsize']='x-small'
     mpl.rcParams['ytick.labelsize']='x-small'
 
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     model_name = get_background_name(catalog_id,star_id,results_dir)
 
     filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
@@ -560,7 +566,7 @@ def get_background_name(catalog_id,star_id,results_dir):
     print(' ----------------------------------------------------------------- ')
     return bg_name
 
-def single_parameter_evolution(catalog_id,star_id,subdir,parameter):
+def single_parameter_evolution(catalog_id,star_id,subdir,parameter,root_path=None):
     """
     Authors: Kevin Fusshoeller, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -584,7 +590,7 @@ def single_parameter_evolution(catalog_id,star_id,subdir,parameter):
     :type parameter: int
     """
 
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     if parameter < 10:
         parstr = '0' + str(parameter)
     else:
@@ -604,7 +610,7 @@ def single_parameter_evolution(catalog_id,star_id,subdir,parameter):
     plt.plot(np.arange(sampling.size),sampling,'k',lw=2)
 
 
-def parameter_evolution(catalog_id,star_id,subdir):
+def parameter_evolution(catalog_id,star_id,subdir,root_path=None):
     """
     Authors: Kevin Fusshoeller, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -625,7 +631,7 @@ def parameter_evolution(catalog_id,star_id,subdir):
     :type subdir: str
     """
 
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
     nparam = filename_summary.size
    
@@ -651,7 +657,32 @@ def parameter_evolution(catalog_id,star_id,subdir):
     plt.subplots_adjust(hspace=.5,wspace=.35,left=.08,bottom=.05,top=.93,right=.98)
 
 
-def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
+def get_numax(teff,logg):
+    """
+    Author: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: June 2022
+    INAF-OACT
+
+    This method provides as output an estimate of nuMax (frequency of maximum oscillation power) based on 
+    input values of effective temperature and surface gravity. The estimate relies on the scaling relation suggested
+    by Brown et al. 1991 (see also Kjeldsen & Bedding 1995, Garcia & Ballot 2019).
+    
+    :param teff: Stellar effective temperature in Kelvin
+    :type teff: float
+
+    :param logg: Stellar surface gravity in dex
+    :type logg: float
+    """
+
+    logg_sun = 4.43775      # log g is in dex and g has to be in cgs units
+    numax_sun = 3150.0
+    teff_sun = 5777.0
+    numax = numax_sun * 10**(logg - logg_sun) / np.sqrt(teff_sun/teff)
+    return numax
+    
+
+def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0,root_path=None):
     """
     Author: Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -686,7 +717,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     else:
         subdir_str = str(dir_flag)
 
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir_str)
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir_str,root_path)
     freq,psd = get_background_data(catalog_id,star_id,data_dir)
 
     dnu = 0.267*numax**0.760
@@ -723,7 +754,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     n_elements_chunk = int(len(white_noise_array)/10.0)
     w_start = np.mean(white_noise_array[0:n_elements_chunk])
     w_end = np.mean(white_noise_array[-n_elements_chunk:])
-    delta_w = w_start-w_end
+    delta_w = np.absolute(w_start-w_end)
     white_noise = w_end
     gradient_w = delta_w/w_end
     print(' W Gradient (%) = ',gradient_w*100)
@@ -734,7 +765,6 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     else:
         lower_white_noise = white_noise - delta_w
         upper_white_noise = white_noise + delta_w 
-
 
     # Define the priors for the meso-granulation
 
@@ -893,7 +923,7 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0):
     """
 
     boundaries = np.reshape(np.array(boundaries),(int(len(boundaries)/2),2))
-    np.savetxt(filename, boundaries,fmt='%.3f',header=header)
+    np.savetxt(filename, boundaries,fmt='%.3e',header=header)
 
 
     # Write an ASCII file for the nested sampler configuring parameters.
