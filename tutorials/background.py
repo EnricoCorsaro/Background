@@ -720,6 +720,42 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0,root_pa
     data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir_str,root_path)
     freq,psd = get_background_data(catalog_id,star_id,data_dir)
 
+    if "TwoGaussian" in model_name:
+        if isinstance(numax, (np.ndarray, list, tuple)):
+            numax1 = numax[0]
+            numax2 = numax[1]
+            numax = np.mean(numax)
+        else:
+            numax1 = numax
+            numax2 = numax
+        dnu1 = 0.267*numax1**0.760
+        dnu2 = 0.267*numax2**0.760
+        lower_numax1 = numax1 - dnu1 * 1.5
+        upper_numax1 = numax1 + dnu1 * 1.5
+        lower_numax2 = numax2 - dnu2 * 1.5
+        upper_numax2 = numax2 + dnu2 * 1.5
+        sigma1 = np.exp(-1.46182 + 0.877656 * np.log(numax1))
+        lower_sigma1 = sigma1 * 0.6
+        upper_sigma1 = sigma1 * 1.4
+        sigma2 = np.exp(-1.46182 + 0.877656 * np.log(numax2))
+        lower_sigma2 = sigma2 * 0.6
+        upper_sigma2 = sigma2 * 1.4
+
+        freqbin = freq[1] - freq[0]
+        smth_bins = int(dnu1 / freqbin)
+        psd_smth = smooth(psd, window_len=smth_bins, window='flat')
+        interesting_zone = np.where((freq > numax - 3 * dnu1) & (freq < numax + 3 * dnu1))[0]
+        height = np.max(psd_smth[interesting_zone])
+        lower_height1 = 0.1 * height
+        upper_height1 = 1.40 * height
+
+        smth_bins = int(dnu2 / freqbin)
+        psd_smth = smooth(psd, window_len=smth_bins, window='flat')
+        interesting_zone = np.where((freq > numax - 3 * dnu2) & (freq < numax + 3 * dnu2))[0]
+        height = np.max(psd_smth[interesting_zone])
+        lower_height2 = 0.1 * height
+        upper_height2 = 1.40 * height
+
     dnu = 0.267*numax**0.760
     lower_numax = numax - dnu*1.5
     upper_numax = numax + dnu*1.5
@@ -893,7 +929,16 @@ def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0,root_pa
         lower_nu_g1 = np.min(freq)
         boundaries = np.array([lower_white_noise, upper_white_noise, lower_amp_g1, upper_amp_g1, lower_nu_g1, upper_nu_g1, lower_amp_g2, upper_amp_g2, 
                         lower_nu_g2, upper_nu_g2, lower_height, upper_height, lower_numax, upper_numax, lower_sigma, upper_sigma])
-    
+
+    if model_name == 'TwoHarveyTwoGaussian':
+        lower_nu_g1 = np.min(freq)
+        boundaries = np.array([
+            lower_white_noise, upper_white_noise, lower_amp_g1, upper_amp_g1, lower_nu_g1, upper_nu_g1, lower_amp_g2,
+            upper_amp_g2, lower_nu_g2, upper_nu_g2, lower_height1, upper_height1, lower_numax1, upper_numax1,
+            lower_sigma1, upper_sigma1, lower_height2, upper_height2, lower_numax2, upper_numax2,
+            lower_sigma2, upper_sigma2
+        ])
+
     if model_name == 'TwoHarveyColor':
         lower_nu_g1 = np.min(freq)
         boundaries = [lower_white_noise, upper_white_noise, lower_amp_color, upper_amp_color, lower_nu_color, upper_nu_color, 

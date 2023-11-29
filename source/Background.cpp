@@ -26,6 +26,7 @@
 #include "ThreeHarveyNoGaussianBackgroundModel.h"
 #include "TwoHarveyColorBackgroundModel.h"
 #include "TwoHarveyBackgroundModel.h"
+#include "TwoHarveyTwoGaussianBackgroundModel.h"
 #include "TwoHarveyNoGaussianBackgroundModel.h"
 #include "OneHarveyColorBackgroundModel.h"
 #include "OneHarveyBackgroundModel.h"
@@ -225,6 +226,13 @@ int main(int argc, char *argv[])
     {
         model = new TwoHarveyBackgroundModel(covariates, inputFileName);   
     }
+
+    // Meso-granulation and granulation components included, but no colored noise
+    if (backgroundModelName == "TwoHarveyTwoGaussian")
+    {
+        model = new TwoHarveyTwoGaussianBackgroundModel(covariates, inputFileName);   
+    }
+
 
     // Meso-granulation and granulation components included, but no colored noise and no Gaussian envelope
     if (backgroundModelName == "TwoHarveyNoGaussian")
