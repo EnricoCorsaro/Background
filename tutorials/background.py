@@ -100,7 +100,7 @@ def get_working_paths(catalog_id,star_id,subdir,root_path=None):
 
     return data_dir,star_dir,results_dir
 
-def background_plot(catalog_id,star_id,subdir,root_path=None,params=None):
+def background_plot(catalog_id,star_id,subdir,root_path=None,params=None,save_bkg_level=False):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
@@ -164,6 +164,7 @@ def background_plot(catalog_id,star_id,subdir,root_path=None,params=None):
     plt.ylim(np.min(w)*0.1,np.max(psd))
     plt.xlabel(r'Frequency [$\mu$Hz]',fontsize='xx-large')
     plt.ylabel(r'PSD [ppm$^2$/$\mu$Hz]',fontsize='xx-large')
+    #plt.ylabel(r'PSD [(m/s)$^2 \times 10^3$/$\mu$Hz]',fontsize='xx-large')
     ax1.tick_params(width=1.0,length=10,top=True,right=True,labelsize='xx-large')
     ax1.tick_params(which='minor',width=1.0,length=8,top=True,right=True)
     plt.plot(freq,psd_smth,'k',lw=2)
@@ -181,6 +182,18 @@ def background_plot(catalog_id,star_id,subdir,root_path=None,params=None):
     plt.text(.1,.075,'%s%s'% (catalog_id,star_id), size='xx-large', transform=ax1.transAxes)
     pdf.savefig()
     pdf.close()
+
+    if save_bkg_level:
+        filename = star_dir + catalog_id + star_id + '_backgroundLevel_' + subdir + '.txt'
+
+        header="""
+        Background level obtained from the Background fit with DIAMONDS (not including the Gaussian envelope).
+        Column #1: Frequency (microHz)
+        Column #2: Background level (PSD units)
+        """
+
+        #b1 /= 1.e3
+        np.savetxt(filename, np.c_[freq,b1],fmt='%.8e',header=header)
     return
 
 def background_mpd(catalog_id,star_id,subdir,root_path=None):
