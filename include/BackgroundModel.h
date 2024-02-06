@@ -30,7 +30,7 @@ class BackgroundModel : public Model
 
         void readNyquistFrequencyFromFile(const string inputFileName);
         virtual void predict(RefArrayXd predictions, RefArrayXd const modelParameters) = 0;
-
+        virtual void computeVariance(RefArrayXd modelVariance, const RefArrayXd modelParameters){};
 
     protected:
 

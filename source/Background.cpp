@@ -29,6 +29,8 @@
 #include "TwoHarveyNoGaussianBackgroundModel.h"
 #include "OneHarveyColorBackgroundModel.h"
 #include "OneHarveyBackgroundModel.h"
+#include "OneHarveyFreeSlopeBackgroundModel.h"
+#include "OneHarveyFreeSlopeNoGaussianBackgroundModel.h"
 #include "OneHarveyNoGaussianBackgroundModel.h"
 #include "OriginalBackgroundModel.h"
 #include "FlatBackgroundModel.h"
@@ -243,8 +245,21 @@ int main(int argc, char *argv[])
     {    
         model = new OneHarveyBackgroundModel(covariates, inputFileName); 
     }
-    
-        // Only meso-granulation component included, but no colored noise and no Gaussian envelope
+   
+    // Only meso-granulation component included, but no colored noise
+    if (backgroundModelName == "OneHarveyFreeSlope")
+    {    
+        model = new OneHarveyFreeSlopeBackgroundModel(covariates, inputFileName); 
+    }
+
+    // Only meso-granulation component included, but no colored noise and no Gaussian envelope
+    if (backgroundModelName == "OneHarveyFreeSlopeNoGaussian")
+    {    
+        model = new OneHarveyFreeSlopeNoGaussianBackgroundModel(covariates, inputFileName); 
+    }
+
+ 
+    // Only meso-granulation component included, but no colored noise and no Gaussian envelope
     if (backgroundModelName == "OneHarveyNoGaussian")
     {    
         model = new OneHarveyNoGaussianBackgroundModel(covariates, inputFileName); 
@@ -372,8 +387,23 @@ int main(int argc, char *argv[])
     // Fraction by which each axis in an ellipsoid has to be enlarged
     // It can be a number >= 0, where 0 means no enlargement. configuringParameters(5)
     // Calibration from Corsaro et al. (2018)
-    
-    double initialEnlargementFraction = 0.369*pow(Ndimensions,0.574);    
+   
+    double initialEnlargementFraction;
+
+    if (initialNlivePoints <= 500)
+    {
+        cerr << endl;
+        cerr << " Using the calibration for 500 live points." << endl;
+        cerr << endl;
+        initialEnlargementFraction = 0.369*pow(Ndimensions,0.574);  
+    }
+    else
+    {
+        cerr << endl;
+        cerr << " Using the calibration for 1000 live points." << endl;
+        cerr << endl;
+        initialEnlargementFraction = 0.310*pow(Ndimensions,0.598);  
+    }
 
     
     // Exponent for remaining prior mass in ellipsoid enlargement fraction
