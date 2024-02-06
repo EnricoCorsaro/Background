@@ -18,7 +18,7 @@ To run the tutorial follow the procedure (if you have installed the Background c
 6. Go to `Background/build/`
 7. Execute the code for this tutorial by using the command line 
 ```bash
-./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0.0 0
+./background KIC 012008916 00 ThreeHarvey background_hyperParameters 0.0 0.0 0
 ```
 
 In this format, the command line specifies the following inputs:
@@ -27,8 +27,9 @@ In this format, the command line specifies the following inputs:
 3. The subfolder where the outputs from the fit will be stored (here `00`).
 4. The name of the background chosen for the fit (here `ThreeHarvey`). See also [here](https://famed.readthedocs.io/en/latest/background_models.html) for a list and description of the different background models implemented in Background.
 5. The prefix string of the prior hyper-parameters file (typically `background_hyperParameters`). Before running a fit, the user has to make sure that a prior filename ending with the same name of the subfolder name given as input #3 is already placed inside the stellar folder under `Background/results/KIC012008916/`). In this example, the prior file is `background_hyperParameters_00.txt`.
-6. An input threshold for the low-frequency region. This can be used as a high-pass filter frequency in case the user is not interested in fitting all the data below this given frequency. It can be useful for cases where a filtering is applied in the low frequency part of the dataset (e.g. to remove rotational harmonics). It has to be specified in muHz. The default input is 0.0, meaning that no threshold is used.
-7. The flag for the Principal Component Analysis (PCA). PCA is a dimensional projection technique to help in reducing the effective number of dimensions (or free parameters) during the fitting process. For activating this option, set this flag to 1. The default value that we recommend for the background fitting is 0, meaning that PCA is not activated. This is because the background parameters exhibit strong correlations and a reduction in the effective number of dimensions can be dangerous and yield bad fitting results.
+6. An input threshold for the low-frequency region. This can be used as a high-pass filter in case the user is not interested in fitting all the data below this given frequency. It can be useful for cases where a filtering is applied in the low frequency part of the dataset (e.g. to remove rotational harmonics). It has to be specified in muHz. The default input is 0.0, meaning that no threshold is used.
+7. An input threshold for the high-frequency region. This can be used as a low-pass filter in case the user is not interested in fitting all the data above this given frequency. It can be useful for cases where the dataset extends well beyond the region where solar-like oscillations are expected (say above 6 muHz). Setting this threshold will help in speeding up the computation. It has to be specified in muHz. The default input is 0.0, meaning that no threshold is used.
+8. The flag for the Principal Component Analysis (PCA). PCA is a dimensional projection technique to help in reducing the effective number of dimensions (or free parameters) during the fitting process. For activating this option, set this flag to 1. The default value that we recommend for the background fitting is 0, meaning that PCA is not activated. This is because the background parameters exhibit strong correlations and a reduction in the effective number of dimensions can be dangerous and yield bad fitting results.
 
 Once the computation is completed, you can plot the results with Python by using the suite provided in the file `background.py` of the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background. For producing the actual plot of the background fit follow the guidelines below:
 1. Move the file `Background/tutorials/background.py` into `Background/results/python/` (create this folder if you don’t have one already)
@@ -65,7 +66,7 @@ The call to the method `set_background_priors` requires 5 input parameters, name
 
 This tutorial will generate a new `background_hyperParameters_01.txt` file inside the star folder `Background/results/KIC012008916/`, as well as the required configuring files for DIAMONDS (i.e. `NSMC_configuringParameters.txt`, `Xmeans_configuringParameters.txt`, and `NyquistFrequency.txt`, if they do not exist already). It will also create the entire output star folder if none is present. You will be able to run the corresponding fit going to `Background/build/` and executing the command line 
 ```bash
-./background KIC 012008916 01 ThreeHarvey background_hyperParameters 0.0 0
+./background KIC 012008916 01 ThreeHarvey background_hyperParameters 0.0 0.0 0
 ```
 All the results from the fit will be stored in the folder `Background/results/KIC012008916/01/`.
 
