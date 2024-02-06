@@ -46,9 +46,9 @@ int main(int argc, char *argv[])
 
     // Check number of arguments for main function
     
-    if (argc != 8)
+    if (argc != 9)
     {
-        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <input prior base filename> <input threshold frequency (muHz)> <PCA flag> " << endl;
+        cerr << "Usage: ./background <Catalog ID> <Star ID> <run number> <background model> <input prior base filename> <low-frequency threshold (uHz)> <high-frequency threshold (uHz)> <PCA flag> " << endl;
         exit(EXIT_FAILURE);
     }
     
@@ -65,9 +65,11 @@ int main(int argc, char *argv[])
     string runNumber(argv[3]);
     string backgroundModelName(argv[4]);
     string inputPriorBaseName(argv[5]); 
-    string inputThresholdFrequency(argv[6]);
-    string inputPCAflag(argv[7]);
-    double thresholdFrequency = stod(inputThresholdFrequency);
+    string inputLowFrequencyThreshold(argv[6]);
+    string inputHighFrequencyThreshold(argv[7]);
+    string inputPCAflag(argv[8]);
+    double lowFrequencyThreshold = stod(inputLowFrequencyThreshold);
+    double highFrequencyThreshold = stod(inputHighFrequencyThreshold);
     int PCAflag = stoi(inputPCAflag);
 
 
@@ -110,11 +112,11 @@ int main(int argc, char *argv[])
 
     // Trim input dataset in the given frequency range
 
-    if (thresholdFrequency > covariates.minCoeff())
+    if ((lowFrequencyThreshold > covariates.minCoeff()) && (lowFrequencyThreshold != 0.0))
     {
-        // Activate the trimming only if a meaningful lower frequency threshold is supplied
+        // Activate the trimming for the low-frequency part of the dataset only if a meaningful low-frequency threshold is supplied
 
-        double lowerFrequency = thresholdFrequency;
+        double lowerFrequency = lowFrequencyThreshold;
         double upperFrequency = covariates.maxCoeff();
     
         vector<int> trimIndices = Functions::findArrayIndicesWithinBoundaries(covariates, lowerFrequency, upperFrequency);
@@ -130,10 +132,37 @@ int main(int argc, char *argv[])
     }
     else
     {
-        // Set input threshold frequency to 0 in case it is not larger than the minimum frequency of the dataset.
+        // Set input low-frequency threshold to 0 in case it is not larger than the minimum frequency of the dataset.
         // This implies that it is not used within the computation.
 
-        thresholdFrequency = 0.0;
+        lowFrequencyThreshold = 0.0;
+    }
+
+    if ((highFrequencyThreshold < covariates.maxCoeff() && highFrequencyThreshold != 0.0) && (highFrequencyThreshold > covariates.minCoeff()))
+    {
+        // Activate the trimming for the high-frequency part of the dataset only if a meaningful high-frequency threshold is supplied
+
+        double lowerFrequency = covariates.minCoeff();
+        double upperFrequency = highFrequencyThreshold;
+    
+        vector<int> trimIndices = Functions::findArrayIndicesWithinBoundaries(covariates, lowerFrequency, upperFrequency);
+        int Nbins = trimIndices.size();
+        ArrayXd trimmedArray(Nbins);
+            
+        trimmedArray = covariates.segment(trimIndices[0],Nbins);
+        covariates.resize(Nbins);
+        covariates = trimmedArray;
+        trimmedArray = observations.segment(trimIndices[0],Nbins);
+        observations.resize(Nbins);
+        observations = trimmedArray;
+    }
+    else
+    {
+        // Set input high-frequency threshold to 0 in case it is not larger than the minimum frequency of the dataset and smaller
+        // than the maximum frequency of the dataset.
+        // This implies that it is not used within the computation.
+
+        highFrequencyThreshold = 0.0;
     }
 
     cout << "------------------------------------------------------- " << endl;
@@ -142,6 +171,7 @@ int main(int argc, char *argv[])
     cout << "------------------------------------------------------- " << endl;
     cout << endl; 
 
+    exit(1);
     // -------------------------------------------------------
     // ----- First step. Set up all prior distributions -----
     // -------------------------------------------------------
@@ -437,12 +467,14 @@ int main(int argc, char *argv[])
     nestedSampler.outputFile << shrinkingRate << endl;
     nestedSampler.outputFile << "# Other information on the run" << endl;
     nestedSampler.outputFile << "# Row #1: Low-Frequency threshold (0 if not used)" << endl;
-    nestedSampler.outputFile << "# Row #2: Local working path used" << endl;
-    nestedSampler.outputFile << "# Row #3: Catalog and Star ID" << endl;
-    nestedSampler.outputFile << "# Row #4: Run Number" << endl;
-    nestedSampler.outputFile << "# Row #5: Background model adopted" << endl;
-    nestedSampler.outputFile << "# Row #6: PCA activated (1 = yes / 0 = no)" << endl;
-    nestedSampler.outputFile << thresholdFrequency << endl;
+    nestedSampler.outputFile << "# Row #2: High-Frequency threshold (0 if not used)" << endl;
+    nestedSampler.outputFile << "# Row #3: Local working path used" << endl;
+    nestedSampler.outputFile << "# Row #4: Catalog and Star ID" << endl;
+    nestedSampler.outputFile << "# Row #5: Run Number" << endl;
+    nestedSampler.outputFile << "# Row #6: Background model adopted" << endl;
+    nestedSampler.outputFile << "# Row #7: PCA activated (1 = yes / 0 = no)" << endl;
+    nestedSampler.outputFile << lowFrequencyThreshold << endl;
+    nestedSampler.outputFile << highFrequencyThreshold << endl;
     nestedSampler.outputFile << myLocalPath[0] << endl;
     nestedSampler.outputFile << CatalogID + StarID << endl;
     nestedSampler.outputFile << runNumber << endl;
