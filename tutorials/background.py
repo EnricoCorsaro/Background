@@ -139,6 +139,7 @@ def background_plot(catalog_id,star_id,subdir,root_path=None,params=None,save_bk
 
     mpl.rcParams['xtick.labelsize']='medium'
     mpl.rcParams['ytick.labelsize']='medium'
+    mpl.rcParams['agg.path.chunksize']= 10000
    
     data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
     freq,psd = get_background_data(catalog_id,star_id,data_dir) 
@@ -537,8 +538,8 @@ def background_function(params,freq,model_name,star_dir):
 
     zeta = 2.0*np.sqrt(2.0)/pi
     nyq = np.loadtxt(star_dir + 'NyquistFrequency.txt')
-    r = (np.sin(pi/2. * freq/nyq) / (pi/2. * freq/nyq))**2
-    
+    r = (np.sinc(0.5 * freq/nyq))**2
+
     h_long = zeta * r * (amp_long**2/freq_long) / (1 + (freq/freq_long)**4)
     h_gran1 = zeta * r *(amp_gran1**2/freq_gran1) / (1 + (freq/freq_gran1)**4)
     h_gran2 = zeta * r *(amp_gran2**2/freq_gran2) / (1 + (freq/freq_gran2)**4)
