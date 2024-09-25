@@ -59,12 +59,9 @@ OriginalBackgroundModel::~OriginalBackgroundModel()
 // OriginalBackgroundModel::predict()
 //
 // PURPOSE:
-//      Builds the predictions from a background model for red giant stars.
-//      The model consists of one constant component, two Harvey-like profiles
-//      and a Gaussian for modeling the oscillation envelope.
-//      The Harvey-like profile for long-trend variations is not considered in this model.
-//      This model is more suited for very low-numax stars.
-//      A component for colored noise is included, more indicated for low-numax stars
+//      Builds the predictions from a background model generally adopted for simulated stars.
+//      The model consists of one constant component, one Harvey profiles (exponent fixed to 2)
+//      and a Gaussian for modeling the oscillation envelope. This model is adopted in e.g. Ball et al. 2018.
 //
 // INPUT:
 //      predictions:        one-dimensional array to contain the predictions
@@ -97,12 +94,12 @@ void OriginalBackgroundModel::predict(RefArrayXd predictions, RefArrayXd const m
     double sigma = modelParameters(5);
 
 
-    // Compute Harvey components and add them to the predictions
+    // Compute the Harvey component and add it to the predictions
 
     predictions = 4.0*amplitudeHarvey1*amplitudeHarvey1/(frequencyHarvey1*(1.0 + (2*Functions::PI*covariates/frequencyHarvey1).pow(2)));
 
 
-    // Compute Gaussian envelope for RGB Oscillations and add it to the predictions
+    // Compute Gaussian envelope for oscillations and add it to the predictions
 
     predictions += heightOscillation * exp(-1.0*(nuMax - covariates)*(nuMax - covariates)/(2.0 * sigma * sigma));
 

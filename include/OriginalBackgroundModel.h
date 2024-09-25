@@ -1,4 +1,4 @@
-// Derived class for global background fit to photometric power spectra with a single Harvey component and no colored-noise
+// Derived class for global background fit to photometric power spectra with a classic one Harvey profile.
 // Created by Enrico Corsaro @ OACT - February 2019
 // e-mail: emncorsaro@gmail.com
 // Header file "OriginalBackgroundModel.h"
