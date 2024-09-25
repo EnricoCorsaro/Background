@@ -16,9 +16,7 @@
 #include "Ellipsoid.h"
 #include "KmeansClusterer.h"
 #include "EuclideanMetric.h"
-#include "Prior.h"
-#include "UniformPrior.h"
-#include "NormalPrior.h"
+#include "MixedPriorMaker.h"
 #include "ExponentialLikelihood.h"
 #include "ThreeHarveyColorBackgroundModel.h"
 #include "ThreeHarveyColorNoGaussianBackgroundModel.h"
@@ -176,43 +174,12 @@ int main(int argc, char *argv[])
     // ----- First step. Set up all prior distributions -----
     // -------------------------------------------------------
     
-    // Uniform Prior
-    unsigned long Ndimensions;              // Number of parameters for which prior distributions are defined
-    
-    // Read prior hyper parameters for resolved modes
     inputFileName = outputDirName + inputPriorBaseName + "_" + runNumber + ".txt";
-    File::openInputFile(inputFile, inputFileName);
-    File::sniffFile(inputFile, Ndimensions, Ncols);
     
-    if (Ncols != 2)
-    {
-        cerr << " Wrong number of input prior boundaries." << endl;
-        cerr << " Two boundaries are required for uniform priors." << endl;
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        cout << "------------------------------------------------------- " << endl;
-        cout << " Reading prior file " + inputPriorBaseName + "_" + runNumber + ".txt" << endl;
-        cout << "------------------------------------------------------- " << endl;
-        cout << endl;
-    }
-    
-    ArrayXXd hyperParameters;
-    hyperParameters = File::arrayXXdFromFile(inputFile, Ndimensions, Ncols);
-    inputFile.close(); 
-    ArrayXd hyperParametersMinima = hyperParameters.col(0);
-    ArrayXd hyperParametersMaxima = hyperParameters.col(1);
-
-    // Uniform Prior
-    int NpriorTypes = 1;                                    // Total number of prior types included in the computation
-    vector<Prior*> ptrPriors(NpriorTypes);
-    
-    UniformPrior uniformPrior(hyperParametersMinima, hyperParametersMaxima);
-    ptrPriors[0] = &uniformPrior;
-
-    string fullPathHyperParameters = outputPathPrefix + "hyperParametersUniform.txt";
-    uniformPrior.writeHyperParametersToFile(fullPathHyperParameters);
+    bool writeHyperParametersToFile = true;
+    unsigned long Ndimensions;              // Number of parameters for which prior distributions are defined
+    vector<Prior*> ptrPriors;
+    ptrPriors = MixedPriorMaker::prepareDistributions(inputFileName, outputPathPrefix, Ndimensions, writeHyperParametersToFile); 
 
 
     // -------------------------------------------------------------------
@@ -378,7 +345,7 @@ int main(int argc, char *argv[])
     configuringParameters = File::arrayXXdFromFile(inputFile, Nparameters, Ncols);
     inputFile.close();
 
-    if (Nparameters != 8)
+    if ((Nparameters < 8) && (Nparameters > 9))
     {
         cerr << "Wrong number of input parameters for NSMC algorithm." << endl;
         exit(EXIT_FAILURE);
@@ -446,6 +413,16 @@ int main(int argc, char *argv[])
     
     double terminationFactor = configuringParameters(7);    
 
+    // Total maximum number of nested iterations required to carry out the computation.
+    // This is used only if the parameter is specified in the input configuring file
+    
+    int maxNiterations = 0; 
+    if (Nparameters == 9)
+    {
+        maxNiterations = configuringParameters(8);
+    }
+
+
     MultiEllipsoidSampler nestedSampler(printOnTheScreen, ptrPriors, likelihood, myMetric, clusterer, 
                                         initialNlivePoints, minNlivePoints, initialEnlargementFraction, shrinkingRate);
     
@@ -454,7 +431,7 @@ int main(int argc, char *argv[])
     PowerlawReducer livePointsReducer(nestedSampler, tolerance, exponent, terminationFactor);
  
     nestedSampler.run(livePointsReducer, NinitialIterationsWithoutClustering, NiterationsWithSameClustering, 
-                      maxNdrawAttempts, terminationFactor, 0, outputPathPrefix);
+                      maxNdrawAttempts, terminationFactor, maxNiterations, outputPathPrefix);
 
     nestedSampler.outputFile << "# List of configuring parameters used for the ellipsoidal sampler and cluster algorithm" << endl;
     nestedSampler.outputFile << "# Row #1: Minimum Nclusters" << endl;
