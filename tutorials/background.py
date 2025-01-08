@@ -60,6 +60,35 @@ def smooth(x, window_len=11, window='hanning'):
     
     return y[window_len//2:-window_len//2+1]
 
+
+def get_numax(teff,logg):
+    """
+    Author: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: June 2022
+    INAF-OACT
+
+    This method provides as output an estimate of nuMax (frequency of maximum oscillation power) based on 
+    input values of effective temperature and surface gravity. The estimate relies on the scaling relation suggested
+    by Brown et al. 1991 (see also Kjeldsen & Bedding 1995, Garcia & Ballot 2019).
+    
+    :param teff: Stellar effective temperature in Kelvin
+    :type teff: float
+
+    :param logg: Stellar surface gravity in dex
+    :type logg: float
+
+    """
+
+    logg_sun = 4.43775      # log g is in dex and g has to be in cgs units
+    numax_sun = 3150.0
+    teff_sun = 5777.0
+    numax = numax_sun * 10**(logg - logg_sun) / np.sqrt(teff_sun/teff)
+    return numax
+
+
+
+
 def get_working_paths(catalog_id,star_id,subdir,root_path=None):
     """
     Authors: Jean McKeever, Enrico Corsaro
@@ -103,6 +132,395 @@ def get_working_paths(catalog_id,star_id,subdir,root_path=None):
         os.mkdir(results_dir)
 
     return data_dir,star_dir,results_dir
+
+
+def get_prior_parameters(results_dir):
+    """
+    Author: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 5 Aug 2024
+    INAF-OACT
+
+    This method reads the file containing the prior hyper parameters and provides as output
+    arrays containing the hyper parameters for each free parameter, the corresponding prior type,
+    and the resulting density (in log) of the prior distribution.
+
+    :param results_dir: the full path of the folder where the file of the prior hyper-parameters is stored
+    :type parameters: string
+
+    Note: the prior type can be 0 = Uniform, 1 = Normal, 2 = Super Gaussian, 3 = Grid Uniform. This is set to 0 by default.
+    """
+    
+    if not os.path.isfile(results_dir + prefix + 'hyperParameters.txt'):
+        hyperpar1, hyperpar2 = np.loadtxt(results_dir + prefix + 'hyperParametersUniform.txt',unpack=True,comments='#',usecols=(0,1))
+        n_param = hyperpar1.size
+        hyperpar3 = np.zeros(hyperpar1.size)
+        hyperpar4 = np.zeros(hyperpar1.size)
+        prior_type = np.zeros(n_param)
+    else:
+        hyperpar1, hyperpar2, hyperpar3, hyperpar4, prior_type = np.loadtxt(results_dir + prefix + 'hyperParameters.txt',unpack=True, comments='#',usecols=(0,1,2,3,4))
+        n_param = hyperpar1.size
+
+    log_density = np.zeros(n_param)
+
+    for par in range(0,n_param):
+        if prior_type[par] == 0:
+            log_density[par] = (-1.0) * np.log(np.absolute(hyperpar2[par] - hyperpar1[par]))
+        if prior_type[par] == 1:
+            log_density[par] = (-0.5) * np.log(2.0*pi) - np.log(hyperpar2[par])
+        if prior_type[par] == 2:
+            log_density[par] = (-1.0) * np.log(hyperpar3[par] + np.sqrt(2.*pi)*hyperpar2[par])
+        if prior_type[par] == 3:
+            interval = hyperpar2[par] - hyperpar1[par]
+            separation = interval/(hyperpar3[par]-1.0)
+            log_density[par] = (-1.0) * np.log(hyperpar3[par]*separation*hyperpar4[par]) 
+
+    return hyperpar1,hyperpar2,hyperpar3,hyperpar4,prior_type,log_density
+
+
+def prepare_prior_distribution(hyperpars, prior_type, prior_par, amplitude):
+    """
+    Author: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 5 Aug 2024
+    INAF-OACT
+
+    This method prepares the array for plotting the prior distribution according to the prior type of
+    a given parameter.
+
+    :param hyperpars: the hyper parameters defining the prior
+    :type hyperpar: array of floats
+
+    :param prior_type: the type of prior for which the distribution is defined
+    :type prior_type: float
+
+    :param prior_par: the axis with the values of the sampled free parameters
+    :type prior_par: array of floats
+
+    :param amplitude: the maximum value desired for plotting the prior distribution
+    :type amplitude: float
+
+    Note: the prior type can be 0 = Uniform, 1 = Normal, 2 = Super Gaussian, 3 = Grid Uniform. This is set to 0 by default.
+    """
+            
+    prior_pdf = np.zeros(prior_par.size)
+    if prior_type == 0:
+        prior_range = np.where((prior_par >= hyperpars[0]) & (prior_par <= hyperpars[1]))[0]
+        #prior_pdf[prior_range] = np.exp(log_density)
+        prior_pdf[prior_range] = amplitude
+
+    if prior_type == 1:
+        prior_pdf = np.exp(-0.5*((prior_par - hyperpars[0])**2)/hyperpars[1]**2)
+        prior_pdf *= amplitude
+        
+    if prior_type == 2:
+        plateau_range = np.where((prior_par >= hyperpars[0] - hyperpars[2]/2.0) & (prior_par <= hyperpars[0] + hyperpars[2]/2.0))[0]
+        gaussian_range = np.where(np.absolute(prior_par - hyperpars[0]) > hyperpars[2]/2.0)[0]
+        prior_pdf[plateau_range] = amplitude
+        prior_pdf[gaussian_range] = amplitude*np.exp(-0.5*((np.absolute(prior_par[gaussian_range] - hyperpars[0]) - hyperpars[2]/2.0)**2)/hyperpars[1]**2)
+
+    if prior_type == 3:
+        interval = hyperpars[1] - hyperpars[0]
+        separation = interval/(hyperpars[2]-1.0)
+        abs_dist_grid = np.fmod(prior_par - hyperpars[0],separation)
+        
+        for i in range(0,abs_dist_grid.size):
+            if abs_dist_grid[i] > separation/2.0:
+                abs_dist_grid[i] = separation - abs_dist_grid[i] 
+        
+        grid_range = np.where(abs_dist_grid <= hyperpars[3]*separation/2.0)
+        prior_pdf[grid_range] = amplitude
+
+    return prior_pdf
+
+
+def get_background_data(catalog_id,star_id,data_dir):
+    """
+    Authors: Jean McKeever, Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 12 Aug 2016
+    Edited: 1 June 2021
+    INAF-OACT
+
+    This method reads the PSD of the star
+
+    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
+    :type catalog_id: str
+
+    :param star_id: the ID number of the star
+    :type star_id: str
+
+    :param data_dir: the directory where the data file of the star is stored
+    :type data_dir: str
+
+    """
+
+    freq,psd = np.loadtxt(data_dir + catalog_id + star_id +'.txt',unpack=True)
+    return freq,psd
+
+
+def get_background_name(catalog_id,star_id,results_dir):
+    """
+    Authors: Jean McKeever, Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 12 Aug 2016
+    Edited: 1 June 2021
+    INAF-OACT
+
+    This method obtains the model name of the background used for the fit with Background+DIAMONDS codes
+
+    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
+    :type catalog_id: str
+
+    :param star_id: the ID number of the star
+    :type star_id: str
+
+    :param results_dir: the output directory where the ASCII files generated by DIAMONDS are stored
+    :type results_dir: str
+
+    """
+
+    config = np.loadtxt(results_dir + prefix + 'computationParameters.txt',unpack=True,dtype=str)
+    bg_name = config[-2]
+
+    print(' ----------------------------------------------------------------- ')
+    print(' The background model adopted for ' + catalog_id + star_id + ' is ' + bg_name)
+    print(' ----------------------------------------------------------------- ')
+    return bg_name
+
+
+def get_background_params(catalog_id,star_id,results_dir):
+    """
+    Authors: Jean McKeever, Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 12 Aug 2016
+    Edited: 16 Feb 2024
+    INAF-OACT
+
+    This method reads the Background parameter summary file from DIAMONDS. This file contains the final 
+    estimates for each free parameter of the model. The method works even if the summary file
+    is not available, by computing weighted mean parameters through the sampling evolution and posterior
+    values. Errors on the free parameters are also provided as output.
+
+    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
+    :type catalog_id: str
+
+    :param star_id: the ID number of the star
+    :type star_id: str
+
+    :param results_dir: the output directory where the ASCII files generated by DIAMONDS are stored
+    :type results_dir: str
+
+    """
+
+    if not os.path.isfile(results_dir + prefix + 'parameterSummary.txt'):
+        print(' Background fit did not produce Summary file.\n Using sampling evolution and posterior values to compute results.\n')
+        filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
+        n_param = filename_summary.size
+        params = np.zeros(n_param)
+        lower_error = np.zeros(n_param)
+        posterior = np.loadtxt(results_dir + prefix + 'posteriorDistribution.txt')
+        posterior /= posterior.max()
+
+        for par in range(0,n_param):
+            if par < 10:
+                parstr = '0' + str(par)
+            else:
+                parstr = str(par)
+
+            par_sampling = np.loadtxt(results_dir + prefix + 'parameter0' + parstr + '.txt')
+            params[par] = ((posterior*par_sampling).sum())/posterior.sum()
+            lower_error[par] = ((np.square(par_sampling - params[par])*posterior).sum())/posterior.sum()
+    
+        upper_error = lower_error
+
+    else:
+        params,lowerpar,upperpar = np.loadtxt(results_dir + prefix + 'parameterSummary.txt',unpack=True,usecols=(1,4,5))   # Median value of the free parameter
+        lower_error = params - lowerpar
+        upper_error = upperpar - params
+
+    return params,lower_error,upper_error
+
+
+def print_background_params(catalog_id,star_id,subdir,root_path=None):
+    """
+    Author: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 16 Feb 2024
+    INAF-OACT
+
+    This method prints the resulting parameter estimates from the Background fit done with
+    DIAMONDS. This method works also when the summary file is not available.
+
+    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
+    :type catalog_id: str
+
+    :param star_id: the ID number of the star
+    :type star_id: str
+
+    :param subdir: the output directory where the ASCII files generated by DIAMONDS are stored
+    :type subdir: str
+
+    :param root_path: optional root path where the actual results are located, in case this is different
+    than the default location of the python script (under Background/results/python/)
+    :type root_path: str
+
+    """
+
+    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
+    params,lower_error,upper_error = get_background_params(catalog_id,star_id,results_dir)
+    model_name = get_background_name(catalog_id,star_id,results_dir)
+
+    terminal_labels = [r'White Noise [ppm^2 / uHz]',
+                       r'Amplitude_color [ppm]',
+                       r'Frequency_color [uHz]',
+                       r'Amplitude_long [ppm]',
+                       r'Frequency_long [uHz]',
+                       r'Amplitude_Meso [ppm]',
+                       r'Frequency_Meso [uHz]',
+                       r'Amplitude_Gran [ppm]',
+                       r'Frequency_Gran [uHz]',
+                       r'Ampltidue_Gran (original) [ppm]',
+                       r'Frequency_Gran (original) [uHz]',
+                       r'Height Gaussian [ppm^2 / uHz]',
+                       r'nu_max [uHz]',
+                       r'Sigma_envelope [uHz]']
+
+    if model_name == 'FlatNoGaussian':
+        terminal_labels = [terminal_labels[0]]
+
+    if model_name == 'Flat':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[-3:]
+
+    if model_name == 'Original':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[9:11] + terminal_labels[-3:]
+
+    if model_name == 'OneHarveyNoGaussian':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[7:9]
+
+    if model_name == 'OneHarvey':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[7:9] + terminal_labels[-3:]
+
+    if model_name == 'OneHarveyColor':
+        terminal_labels = terminal_labels[0:3] + terminal_labels[7:9] + terminal_labels[-3:]
+
+    if model_name == 'TwoHarveyNoGaussian':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[5:9]
+    
+    if model_name == 'TwoHarvey':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[5:9] + terminal_labels[-3:]
+    
+    if model_name == 'TwoHarveyColor':
+        terminal_labels = terminal_labels[0:3] + terminal_labels[5:9] + terminal_labels[-3:]
+    
+    if model_name == 'ThreeHarveyNoGaussian':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[3:9]
+    
+    if model_name == 'ThreeHarvey':
+        terminal_labels = [terminal_labels[0]] + terminal_labels[3:9] + terminal_labels[-3:]
+
+    if model_name == 'ThreeHarveyColor':
+        terminal_labels = terminal_labels[0:9] + terminal_labels[-3:] 
+
+    n_param = params.size
+    for parnumb in range(0,n_param):
+        print(" {}: {}, Lower error: {}, Upper error: {}".format(terminal_labels[parnumb],"{:e}".format(params[parnumb]),"{:e}".format(lower_error[parnumb]),"{:e}".format(upper_error[parnumb])))
+
+
+
+def background_function(params,freq,model_name,star_dir):
+    """
+    Authors: Enrico Corsaro
+    email: enrico.corsaro@inaf.it
+    Created: 12 Aug 2016
+    Edited: 1 June 2021
+    INAF-OACT
+
+    This method generates the background model from a list of possible choices as implemented in
+    the Background code extension of DIAMONDS.
+
+    :param params: the input values of the free parameters to generate the model prediction
+    :type params: array of floats
+
+    :param freq: the input frequency array for which the background prediction has to be computed
+    :type freq: array of floats
+
+    :param model_name: the name of the background model to generate the predictions
+    :type model_name: str
+
+    :param star_dir: the path of the folder containing the configuring parameters and results of the given star.
+    This is required in order to retrieve the actual Nyquist frequency used within the computation
+    :type stellar_directory: str
+
+    """
+
+    if model_name == 'FlatNoGaussian':
+        w = params
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,0,1,1
+
+    if model_name == 'Flat':
+        w,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1,0,1
+
+    if model_name == 'OneHarveyNoGaussian':
+        w,amp_gran1,freq_gran1 = params
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,1
+
+    if model_name == 'Original':
+        w,amp_gran_original,freq_gran_original,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_color,freq_color = 0,1,0,1,0,1,0,1
+
+    if model_name == 'OneHarvey':
+        w,amp_gran1,freq_gran1,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1
+
+    if model_name == 'OneHarveyColor':
+        w,amp_color,freq_color,amp_gran1,freq_gran1,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original = 0,1,0,1,0,1
+
+    if model_name == 'TwoHarveyNoGaussian':
+        w,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
+        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,1
+
+    if model_name == 'TwoHarvey':
+        w,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1
+
+    if model_name == 'TwoHarveyColor':
+        w,amp_color,freq_color,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
+        amp_long,freq_long,amp_gran_original,freq_gran_original = 0,1,0,1
+
+    if model_name == 'ThreeHarveyNoGaussian':
+        w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
+        amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,1
+
+    if model_name == 'ThreeHarvey':
+        w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
+        amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1
+   
+    if model_name == 'ThreeHarveyColor':
+        w,amp_color,freq_color,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params    
+        amp_gran_original,freq_gran_original = 0,1
+
+    zeta = 2.0*np.sqrt(2.0)/pi
+    nyq = np.loadtxt(star_dir + 'NyquistFrequency.txt')
+    r = (np.sinc(0.5 * freq/nyq))**2
+
+    h_long = zeta * r * (amp_long**2/freq_long) / (1 + (freq/freq_long)**4)
+    h_gran1 = zeta * r *(amp_gran1**2/freq_gran1) / (1 + (freq/freq_gran1)**4)
+    h_gran2 = zeta * r *(amp_gran2**2/freq_gran2) / (1 + (freq/freq_gran2)**4)
+    h_gran_original = 4 * r *(amp_gran_original**2/freq_gran_original) / (1 + (2*pi*freq/freq_gran_original)**2)
+    h_color = 2*pi*amp_color*amp_color/(freq_color*(1+(freq/freq_color)**2)) 
+    
+    g = r * hg * np.exp(-(numax-freq)**2/(2.*sigma**2))
+    
+    b1 = h_long + h_gran1 + h_gran2 + h_gran_original + w + h_color
+    b2 = h_long + h_gran1 + h_gran2 + h_gran_original + g + w + h_color
+   
+    w = np.zeros(freq.size) + w 
+
+    return b1,b2,h_long,h_gran1,h_gran2,h_gran_original,g,w,h_color
+
 
 def background_plot(catalog_id,star_id,subdir,root_path=None,params=None,save_bkg_level=False):
     """
@@ -209,12 +627,12 @@ def background_plot(catalog_id,star_id,subdir,root_path=None,params=None,save_bk
         np.savetxt(filename, np.c_[freq,b1],fmt='%.8e',header=header)
     return
 
-def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,full_range=False):
+def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,full_range=False,overplot_prior=True):
     """
     Authors: Jean McKeever, Enrico Corsaro
     email: enrico.corsaro@inaf.it
     Created: 12 Aug 2016
-    Edited: 20 Feb 2024
+    Edited: 6 Aug 2024
     INAF-OACT
 
     This method plots the marginal distributions for each of the fitted background parameters
@@ -333,6 +751,8 @@ def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,f
     params,lower_error,upper_error = get_background_params(catalog_id,star_id,results_dir)
     n_param = params.size
 
+    hyperpar1,hyperpar2,hyperpar3,hyperpar4,prior_type,log_density = get_prior_parameters(results_dir)
+
     if not os.path.isfile(results_dir + prefix + 'parameterSummary.txt'):
         print(" No marginal probability distributions are available.\n Using sampling evolution to plot standard histograms for each parameter.\n") 
         
@@ -344,15 +764,32 @@ def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,f
         fig = plt.figure(3,figsize=(11,7))
         plt.clf()
 
+        posterior = np.loadtxt(results_dir + prefix + 'posteriorDistribution.txt')
+        
         for parnumb in range(0,n_param):
             if parnumb < 10:
                 parstr = '0' + str(parnumb)
             else:
                 parstr = str(parnumb)
 
+            hyperpars = [hyperpar1[parnumb],hyperpar2[parnumb],hyperpar3[parnumb],hyperpar4[parnumb]]
+            
             par = np.loadtxt(results_dir + prefix + 'parameter0' + parstr + '.txt')
+            
             plt.subplot(4,3,parnumb+1)
-            hist_y, hist_x, _ = plt.hist(par,bins='auto')
+            
+            binwidth = 50
+            hist_y, hist_x, _ = plt.hist(par,weights=posterior,bins=binwidth,color='limegreen',alpha=.5,edgecolor='black')
+            
+            amplitude = np.max(hist_y)*.57
+            par_sorted = np.sort(par)
+            prior_pdf = prepare_prior_distribution(hyperpars,prior_type[parnumb],par_sorted,amplitude)
+            
+            plt.fill_between(par_sorted,prior_pdf,color='darkorange',alpha=.5)
+            plt.hist(par,weights=posterior,bins=binwidth,color='limegreen',alpha=.6,edgecolor='black')
+
+#            hist_y, hist_x, _ = plt.hist(par,bins='auto')
+            
             if (x_label_rotation !=0):
                 plt.xticks(rotation = x_label_rotation)
             plt.ylabel('Counts',fontsize='small')
@@ -376,18 +813,34 @@ def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,f
             else:
                 parstr = str(parnumb)
        
-            plt.subplot(4,3,parnumb+1)
+            ax1 = plt.subplot(4,3,parnumb+1)
+            
+            hyperpars = [hyperpar1[parnumb],hyperpar2[parnumb],hyperpar3[parnumb],hyperpar4[parnumb]]
         
             if not os.path.isfile(results_dir + prefix + 'marginalDistribution0' + parstr + '.txt'):
                 print(" No marginal probability distribution produced for the parameter {} ({}).\n Plotting a standard histogram instead.".format('0'+ parstr, terminal_labels[parnumb]))
                 par = np.loadtxt(results_dir + prefix + 'parameter0' + parstr + '.txt')
-                hist_y, hist_x, _ = plt.hist(par,bins='auto')
+                posterior = np.loadtxt(results_dir + prefix + 'posteriorDistribution.txt')
+                binwidth = 50
+                hist_y, hist_x, _ = plt.hist(par,weights=posterior,bins=binwidth,color='limegreen',alpha=.0,edgecolor='black')
+                
+                amplitude = np.max(hist_y)*.57
+                par_sorted = np.sort(par)
+                prior_pdf = prepare_prior_distribution(hyperpars,prior_type[parnumb],par_sorted,amplitude)
+                plt.fill_between(par_sorted,prior_pdf,color='darkorange',alpha=.5)
+                plt.hist(par,weights=posterior,bins=binwidth,color='limegreen',alpha=.6,edgecolor='black')
+
                 if (x_label_rotation != 0):
                     plt.xticks(rotation = x_label_rotation)
                 plt.ylabel('Counts',fontsize='small')
                 plt.vlines(params[parnumb],0,hist_y.max(),lw=1,color='k',linestyle='--')
             else:
                 par,marg = np.loadtxt(results_dir + prefix + 'marginalDistribution0' + parstr + '.txt',unpack=True)
+                
+                amplitude = np.max(marg)*.57
+                prior_pdf = prepare_prior_distribution(hyperpars,prior_type[parnumb],par,amplitude)
+                
+                plt.plot(par,prior_pdf,ls='None',lw=1.)
                 plt.plot(par,marg,'k-')
                 if full_range:
                     plt.xlim(np.min(par),np.max(par))
@@ -397,12 +850,16 @@ def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,f
                     plt.xticks(rotation = x_label_rotation)
                 plt.ylim(0,np.max(marg)*1.1)
                 plt.ylabel('MPD',fontsize='small')
-                tmpci = np.where((par>lowerpar[parnumb])&(par<upperpar[parnumb]))[0]
+                tmpci = np.where((par>lowerpar[parnumb]) & (par<upperpar[parnumb]))[0]
                 ci = par[tmpci]
                 postci = marg[tmpci]
-                plt.fill_between(ci,postci,color='blue',alpha=.4)
+                plt.fill_between(par,prior_pdf,color='darkorange',alpha=.5)
+                plt.fill_between(ci,postci,color='dodgerblue',alpha=.6)
                 plt.vlines(medianpar[parnumb],0,max(marg),lw=1,color='k',linestyle='--')
-        
+
+            plt.text(0.05,0.83,'par # %.f'%(parnumb), fontsize='small', transform=ax1.transAxes)
+            plt.text(0.05,0.71,r'$\pi$ type: %.f'%(prior_type[parnumb]), fontsize='small', transform=ax1.transAxes)
+            plt.text(0.05,0.59,'median: %.1f'%(medianpar[parnumb]), fontsize='small', transform=ax1.transAxes)
             plt.title(plot_labels[parnumb],fontsize='small')
 
         plt.subplots_adjust(hspace=.5,wspace=.35,left=.08,bottom=.05,top=.93,right=.98)
@@ -410,287 +867,6 @@ def background_mpd(catalog_id,star_id,subdir,root_path=None,x_label_rotation=0,f
         pdf.close()
     return
 
-def background_function(params,freq,model_name,star_dir):
-    """
-    Authors: Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: 12 Aug 2016
-    Edited: 1 June 2021
-    INAF-OACT
-
-    This method generates the background model from a list of possible choices as implemented in
-    the Background code extension of DIAMONDS.
-
-    :param params: the input values of the free parameters to generate the model prediction
-    :type params: array of floats
-
-    :param freq: the input frequency array for which the background prediction has to be computed
-    :type freq: array of floats
-
-    :param model_name: the name of the background model to generate the predictions
-    :type model_name: str
-
-    :param star_dir: the path of the folder containing the configuring parameters and results of the given star.
-    This is required in order to retrieve the actual Nyquist frequency used within the computation
-    :type stellar_directory: str
-
-    """
-
-    if model_name == 'FlatNoGaussian':
-        w = params
-        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,0,1,1
-
-    if model_name == 'Flat':
-        w,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1,0,1
-
-    if model_name == 'OneHarveyNoGaussian':
-        w,amp_gran1,freq_gran1 = params
-        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,0,1,1
-
-    if model_name == 'Original':
-        w,amp_gran_original,freq_gran_original,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,amp_color,freq_color = 0,1,0,1,0,1,0,1
-
-    if model_name == 'OneHarvey':
-        w,amp_gran1,freq_gran1,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1,0,1
-
-    if model_name == 'OneHarveyColor':
-        w,amp_color,freq_color,amp_gran1,freq_gran1,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran2,freq_gran2,amp_gran_original,freq_gran_original = 0,1,0,1,0,1
-
-    if model_name == 'TwoHarveyNoGaussian':
-        w,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
-        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,0,1,1
-
-    if model_name == 'TwoHarvey':
-        w,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1,0,1
-
-    if model_name == 'TwoHarveyColor':
-        w,amp_color,freq_color,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_long,freq_long,amp_gran_original,freq_gran_original = 0,1,0,1
-
-    if model_name == 'ThreeHarveyNoGaussian':
-        w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2 = params
-        amp_gran_original,freq_gran_original,amp_color,freq_color,hg,numax,sigma = 0,1,0,1,0,1,1
-
-    if model_name == 'ThreeHarvey':
-        w,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params
-        amp_gran_original,freq_gran_original,amp_color,freq_color = 0,1,0,1
-   
-    if model_name == 'ThreeHarveyColor':
-        w,amp_color,freq_color,amp_long,freq_long,amp_gran1,freq_gran1,amp_gran2,freq_gran2,hg,numax,sigma = params    
-        amp_gran_original,freq_gran_original = 0,1
-
-    zeta = 2.0*np.sqrt(2.0)/pi
-    nyq = np.loadtxt(star_dir + 'NyquistFrequency.txt')
-    r = (np.sinc(0.5 * freq/nyq))**2
-
-    h_long = zeta * r * (amp_long**2/freq_long) / (1 + (freq/freq_long)**4)
-    h_gran1 = zeta * r *(amp_gran1**2/freq_gran1) / (1 + (freq/freq_gran1)**4)
-    h_gran2 = zeta * r *(amp_gran2**2/freq_gran2) / (1 + (freq/freq_gran2)**4)
-    h_gran_original = 4 * r *(amp_gran_original**2/freq_gran_original) / (1 + (2*pi*freq/freq_gran_original)**2)
-    h_color = 2*pi*amp_color*amp_color/(freq_color*(1+(freq/freq_color)**2)) 
-    
-    g = r * hg * np.exp(-(numax-freq)**2/(2.*sigma**2))
-    
-    b1 = h_long + h_gran1 + h_gran2 + h_gran_original + w + h_color
-    b2 = h_long + h_gran1 + h_gran2 + h_gran_original + g + w + h_color
-   
-    w = np.zeros(freq.size) + w 
-
-    return b1,b2,h_long,h_gran1,h_gran2,h_gran_original,g,w,h_color
-
-def get_background_params(catalog_id,star_id,results_dir):
-    """
-    Authors: Jean McKeever, Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: 12 Aug 2016
-    Edited: 16 Feb 2024
-    INAF-OACT
-
-    This method reads the Background parameter summary file from DIAMONDS. This file contains the final 
-    estimates for each free parameter of the model. The method works even if the summary file
-    is not available, by computing weighted mean parameters through the sampling evolution and posterior
-    values. Errors on the free parameters are also provided as output.
-
-    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
-    :type catalog_id: str
-
-    :param star_id: the ID number of the star
-    :type star_id: str
-
-    :param results_dir: the output directory where the ASCII files generated by DIAMONDS are stored
-    :type results_dir: str
-
-    """
-
-    if not os.path.isfile(results_dir + prefix + 'parameterSummary.txt'):
-        print(' Background fit did not produce Summary file.\n Using sampling evolution and posterior values to compute results.\n')
-        filename_summary = np.sort(glob.glob(results_dir + prefix + 'parameter0*.txt'))
-        n_param = filename_summary.size
-        params = np.zeros(n_param)
-        lower_error = np.zeros(n_param)
-        posterior = np.loadtxt(results_dir + prefix + 'posteriorDistribution.txt')
-        posterior /= posterior.max()
-
-        for par in range(0,n_param):
-            if par < 10:
-                parstr = '0' + str(par)
-            else:
-                parstr = str(par)
-
-            par_sampling = np.loadtxt(results_dir + prefix + 'parameter0' + parstr + '.txt')
-            params[par] = ((posterior*par_sampling).sum())/posterior.sum()
-            lower_error[par] = ((np.square(par_sampling - params[par])*posterior).sum())/posterior.sum()
-    
-        upper_error = lower_error
-
-    else:
-        params,lowerpar,upperpar = np.loadtxt(results_dir + prefix + 'parameterSummary.txt',unpack=True,usecols=(1,4,5))   # Median value of the free parameter
-        lower_error = params - lowerpar
-        upper_error = upperpar - params
-
-    return params,lower_error,upper_error
-
-def print_background_params(catalog_id,star_id,subdir,root_path=None):
-    """
-    Author: Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: 16 Feb 2024
-    INAF-OACT
-
-    This method prints the resulting parameter estimates from the Background fit done with
-    DIAMONDS. This method works also when the summary file is not available.
-
-    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
-    :type catalog_id: str
-
-    :param star_id: the ID number of the star
-    :type star_id: str
-
-    :param subdir: the output directory where the ASCII files generated by DIAMONDS are stored
-    :type subdir: str
-
-    :param root_path: optional root path where the actual results are located, in case this is different
-    than the default location of the python script (under Background/results/python/)
-    :type root_path: str
-
-    """
-
-    data_dir,star_dir,results_dir = get_working_paths(catalog_id,star_id,subdir,root_path)
-    params,lower_error,upper_error = get_background_params(catalog_id,star_id,results_dir)
-    model_name = get_background_name(catalog_id,star_id,results_dir)
-
-    terminal_labels = [r'White Noise [ppm^2 / uHz]',
-                       r'Amplitude_color [ppm]',
-                       r'Frequency_color [uHz]',
-                       r'Amplitude_long [ppm]',
-                       r'Frequency_long [uHz]',
-                       r'Amplitude_Meso [ppm]',
-                       r'Frequency_Meso [uHz]',
-                       r'Amplitude_Gran [ppm]',
-                       r'Frequency_Gran [uHz]',
-                       r'Ampltidue_Gran (original) [ppm]',
-                       r'Frequency_Gran (original) [uHz]',
-                       r'Height Gaussian [ppm^2 / uHz]',
-                       r'nu_max [uHz]',
-                       r'Sigma_envelope [uHz]']
-
-    if model_name == 'FlatNoGaussian':
-        terminal_labels = [terminal_labels[0]]
-
-    if model_name == 'Flat':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[-3:]
-
-    if model_name == 'Original':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[9:11] + terminal_labels[-3:]
-
-    if model_name == 'OneHarveyNoGaussian':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[7:9]
-
-    if model_name == 'OneHarvey':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[7:9] + terminal_labels[-3:]
-
-    if model_name == 'OneHarveyColor':
-        terminal_labels = terminal_labels[0:3] + terminal_labels[7:9] + terminal_labels[-3:]
-
-    if model_name == 'TwoHarveyNoGaussian':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[5:9]
-    
-    if model_name == 'TwoHarvey':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[5:9] + terminal_labels[-3:]
-    
-    if model_name == 'TwoHarveyColor':
-        terminal_labels = terminal_labels[0:3] + terminal_labels[5:9] + terminal_labels[-3:]
-    
-    if model_name == 'ThreeHarveyNoGaussian':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[3:9]
-    
-    if model_name == 'ThreeHarvey':
-        terminal_labels = [terminal_labels[0]] + terminal_labels[3:9] + terminal_labels[-3:]
-
-    if model_name == 'ThreeHarveyColor':
-        terminal_labels = terminal_labels[0:9] + terminal_labels[-3:] 
-
-    n_param = params.size
-    for parnumb in range(0,n_param):
-        print(" {}: {}, Lower error: {}, Upper error: {}".format(terminal_labels[parnumb],"{:e}".format(params[parnumb]),"{:e}".format(lower_error[parnumb]),"{:e}".format(upper_error[parnumb])))
-
-def get_background_data(catalog_id,star_id,data_dir):
-    """
-    Authors: Jean McKeever, Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: 12 Aug 2016
-    Edited: 1 June 2021
-    INAF-OACT
-
-    This method reads the PSD of the star
-
-    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
-    :type catalog_id: str
-
-    :param star_id: the ID number of the star
-    :type star_id: str
-
-    :param data_dir: the directory where the data file of the star is stored
-    :type data_dir: str
-
-    """
-
-    freq,psd = np.loadtxt(data_dir + catalog_id + star_id +'.txt',unpack=True)
-    return freq,psd
-
-def get_background_name(catalog_id,star_id,results_dir):
-    """
-    Authors: Jean McKeever, Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: 12 Aug 2016
-    Edited: 1 June 2021
-    INAF-OACT
-
-    This method obtains the model name of the background used for the fit with Background+DIAMONDS codes
-
-    :param catalog_id: the Catalog name of the star (e.g. KIC, TIC, etc.)
-    :type catalog_id: str
-
-    :param star_id: the ID number of the star
-    :type star_id: str
-
-    :param results_dir: the output directory where the ASCII files generated by DIAMONDS are stored
-    :type results_dir: str
-
-    """
-
-    config = np.loadtxt(results_dir + prefix + 'computationParameters.txt',unpack=True,dtype=str)
-    bg_name = config[-2]
-
-    print(' ----------------------------------------------------------------- ')
-    print(' The background model adopted for ' + catalog_id + star_id + ' is ' + bg_name)
-    print(' ----------------------------------------------------------------- ')
-    return bg_name
 
 def single_parameter_evolution(catalog_id,star_id,subdir,parameter,root_path=None):
     """
@@ -792,32 +968,6 @@ def parameter_evolution(catalog_id,star_id,subdir,root_path=None):
     
     plt.subplots_adjust(hspace=.5,wspace=.35,left=.08,bottom=.05,top=.93,right=.98)
 
-
-def get_numax(teff,logg):
-    """
-    Author: Enrico Corsaro
-    email: enrico.corsaro@inaf.it
-    Created: June 2022
-    INAF-OACT
-
-    This method provides as output an estimate of nuMax (frequency of maximum oscillation power) based on 
-    input values of effective temperature and surface gravity. The estimate relies on the scaling relation suggested
-    by Brown et al. 1991 (see also Kjeldsen & Bedding 1995, Garcia & Ballot 2019).
-    
-    :param teff: Stellar effective temperature in Kelvin
-    :type teff: float
-
-    :param logg: Stellar surface gravity in dex
-    :type logg: float
-
-    """
-
-    logg_sun = 4.43775      # log g is in dex and g has to be in cgs units
-    numax_sun = 3150.0
-    teff_sun = 5777.0
-    numax = numax_sun * 10**(logg - logg_sun) / np.sqrt(teff_sun/teff)
-    return numax
-    
 
 def set_background_priors(catalog_id,star_id,numax,model_name,dir_flag=0,root_path=None):
     """

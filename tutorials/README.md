@@ -1,4 +1,4 @@
-# Tutorial for the background fitting of the red giant star KIC 12008916 using a three-Harvey model
+# Tutorial #1 for the background fitting of the red giant star KIC 12008916 using a three-Harvey model
 
 In this tutorial you will find an example of format for data and configuring files for one red giant star observed by the NASA’s Kepler mission.
 The background model adopted for the test star comprises three Harvey profiles, two describing the granulation activity and one related to long-trend variations (at low frequency) and it can be identified within the code as the `ThreeHarvey` background model.
@@ -31,7 +31,7 @@ In this format, the command line specifies the following inputs:
 7. An input threshold for the high-frequency region. This can be used as a low-pass filter in case the user is not interested in fitting all the data above this given frequency. It can be useful for cases where the dataset extends well beyond the region where solar-like oscillations are expected (say above 6 muHz). Setting this threshold will help in speeding up the computation. It has to be specified in muHz. The default input is 0.0, meaning that no threshold is used.
 8. The flag for the Principal Component Analysis (PCA). PCA is a dimensional projection technique to help in reducing the effective number of dimensions (or free parameters) during the fitting process. For activating this option, set this flag to 1. The default value that we recommend for the background fitting is 0, meaning that PCA is not activated. This is because the background parameters exhibit strong correlations and a reduction in the effective number of dimensions can be dangerous and yield bad fitting results.
 
-Once the computation is completed, you can plot the results with Python by using the suite provided in the file `background.py` of the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background. For producing the actual plot of the background fit follow the guidelines below:
+Once the computation is completed, one can plot the results with Python by using the suite provided in the file `background.py` of the tutorials folder. Please make sure that all paths set inside the Python routines match correctly with your actual working paths for Background. For producing the actual plot of the background fit follow the guidelines below:
 1. Move the file `Background/tutorials/background.py` into `Background/results/python/` (create this folder if you don’t have one already)
 2. Go to `Background/results/python` and open a python prompt (e.g. IPython)
 3. In the python prompt execute the commands
@@ -46,9 +46,51 @@ Note that the routine automatically recognizes what type of background model was
 background_mpd('KIC','012008916','00')
 ```
 
+The output plot will show both the MPDs for each free parameter and some additional information like the free parameter number, the flag of the prior type adopted (which in this case will be always 0, standing for Uniform prior type), the median value of the estimated free parameter, and the uniform prior probability distribution (in yellow), which helps to quickly visualize the extension of the prior with respect to the parameter's MPD. By default, each MDP is plotted as centered around 7 times the 68.3 % credible limit on each side. If the option `full_range` of the same Python routine is instead activated, the MDP will be ploted using the entire range of the prior, regardless of the size of its credible region. 
+
 ![Background MPD](https://raw.githubusercontent.com/EnricoCorsaro/Background/master/tutorials/KIC012008916_Background_MPD.png)
 
-# Tutorial for generating new background priors and all the files needed to execute a fit
+# Tutorial #2 for the background fitting of the red giant star KIC 12008916 using a mixed set of prior types
+
+This tutorial provides you with an example of format for the input prior file when different prior types are feeded into the code. Currently DIAMONDS can handle 4 different types of priors, namely Uniform (flag 0), Gaussian (flag 1), SuperGaussian (flag 2) and Uniform Grid (flag 3), the latter being a repeated uniform prior over a range with regularly defined regions of exclusion. Each prior will require its own hyper-parameters to be defined, which can be up to 4 different values in the case of the Uniform Grid prior. These hyper-parameters are detailed below:
+
+1. Uniform Prior: hyper-parameter #1: Minimum value, hyper-parameter #2: Maximum value, hyper-parameter #3: 0, hyper-parameter #4: 0
+2. Gaussian Prior: hyper-parameter #1: Mean value, hyper-parameter #2: Standard Deviation, hyper-parameter #3: 0, hyper-parameter #4: 0
+3. SuperGaussian Prior: hyper-parameter #1: Mean value, hyper-parameter #2: Standard Deviation value, hyper-parameter #3: Width of Plateau, hyper-parameter #4: 0
+4. Uniform Grid Prior: hyper-parameter #1: Minimum value, hyper-parameter #2: Maximum value, hyper-parameter #3: Number of grid points, hyper-parameter #4: Tolerance on grid (a number in the range ]0, 1])
+
+In particular the grid tolerance defines how large each segment of the grid can be with respect to the separation between two adjacent grid points. 
+
+In this tutorial, one can run the background fit for the red giant star KIC 12008916 using a different prior file than the one used in the previous tutorial. The format of the new input prior file, `background_hyperParameters_mixed.txt`, will be automatically recognized by the code and can be used in alternative of the previous case where all uniform prior types are assumed instead. In particular, the format of the input prior file now foresees 5 different columns, that are explained below:
+1. Column #1: the value of the hyper-parameter #1 as defined before depending on the prior type.
+2. Column #2: the value of the hyper-parameter #2 as defined before depending on the prior type.
+3. Column #3: the value of the hyper-parameter #3 as defined before depending on the prior type.
+4. Column #4: the value of the hyper-parameter #4 as defined before depending on the prior type.
+5. Column #5: a flag specifying the prior type (from 0 to 3) as defined before.
+
+Therefore in the example given, all the free parameters have uniform priors defined, except for parameters #0 (SuperGaussian), #7 (Uniform Grid), #8 (Gaussian). This file format could also be used to adopt uniform priors on all the free parameters, and will be equivalent to adopting the case illustrated in tutorial #1. However, when only uniform priors are adopted the user can stick to the simpler 2-columns only format of the input prior file presented in tutorial #1 for simplicity. 
+
+For starting this tutorial we recommend using the following steps:
+1. Starting from the preparation done in tutorial #1, create an additional empty directory labeled `mixed` inside the folder `KIC012008916/`
+2. Go to `Background/build/`
+3. Execute the code for this tutorial by using the command line 
+```bash
+./background KIC 012008916 mixed ThreeHarvey background_hyperParameters 0.0 0.0 0
+```
+
+Once the computation is completed, one can plot the results with Python by using once again the suite provided in the file `background.py` of the tutorials folder. The Python routines will automatically recognize the format of the new mixed prior type without the need to specify anything different as input. For producing the actual plot of the background fit follow the guidelines below:
+1. Go to `Background/results/python` and open a python prompt (e.g. IPython)
+2. In the python prompt execute the command
+```python
+from background import *
+background_mpd('KIC','012008916','mixed')
+```
+
+The output plot will show both the MPDs for each free parameter and some additional information like the free parameter number, the flag of the prior type adopted, the median value of the estimated free parameter, and the prior probability distribution (in yellow), which helps to quickly visualize not only the extension of the prior but also its shape. By default, each MDP is plotted as centered around 7 times the 68.3 % credible limit on each side. If the option `full_range` of the same Python routine is instead activated, the MDP will be ploted using the entire range of the prior, regardless of the size of its credible region. 
+
+![Background Mixed Prior MPD](https://raw.githubusercontent.com/EnricoCorsaro/Background/master/tutorials/KIC012008916_Background_Mixed_MPD.png)
+
+# Tutorial #3 for generating new background priors and all the files needed to execute a fit
 
 This tutorial allows you to generate all the required files for running a new background fit on any input star by starting from the dataset and a raw guess for nuMax. With this tutorial the user will be able to generate the uniform prior boundaries on each free parameter of the background model that is intended to fit. The user can choose any background model among those implemented in the Background code. To run the tutorial follow the steps below. If you have already run the first tutorial, then go directly to step # 4.
 
@@ -70,7 +112,7 @@ This tutorial will generate a new `background_hyperParameters_01.txt` file insid
 ```
 All the results from the fit will be stored in the folder `Background/results/KIC012008916/01/`.
 
-# Tutorial for correcting the uniform prior boundaries in case of bad fits or incomplete executions
+# Tutorial #4 for correcting the uniform prior boundaries in case of bad fits or incomplete executions
 
 When a fit is not performed correctly the background fit level will not match the smoothed power spectrum (black line in the background plot figure). Most likely the cause of this result relies on our choice of the prior boundaries, which could be wrong for at least one of the free parameters. In more severe cases, the Background code is not even able to converge to a solution, so that one cannot check the output plot of the fit. This produces a "segmentation fault" or "assertion failed" error taking place in Results.cpp of the DIAMONDS code. If this happens, the marginal distributions of the corresponding parameters cannot be computed and the process stops without generating the parameter summary file that contains all the estimates (the `background_parameterSummary.txt` file will not be present).
 
